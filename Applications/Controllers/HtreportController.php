@@ -1,14 +1,17 @@
 <?php
 class HtreportController {
 	public function query() {
-        $startTime = $_REQUEST['startTime'];
-        $endTime   = $_REQUEST['endTime'];
+        if(!empty($_REQUEST['start_time']) && !empty($_REQUEST['end_time']) && !empty($_REQUEST['type'])  && !empty($_REQUEST['media_id'])) {
+        	$data = connectionArray(M('tracking')->where("status in(2,3,4) AND source = '{$_REQUEST['media_id']}' AND system = {$_REQUEST['type']}")->select('all'), 'uid');
+        	$startTime = $_REQUEST['start_time'];
+        	$endTime   = $_REQUEST['end_time'];
+        } else info('缺少参数', -1);
         //生成日期数组
         $dates = $this->prDates($startTime, $endTime);
         //前端接收字段
         $basic_list = ['fee'=>'','benifit'=>'','td_fee'=>'','td_benifit'=>'','share'=>'','s_percent'=>'','keep'=>'','track_num'=>'','click_num'=>'','invatation_num'=>''];
         //默认用户
-        $HtreportModel = new HtreportModel(connectionArray(M('tracking')->where("uid IS NOT NULL")->select('all'), 'uid'));
+        $HtreportModel = new HtreportModel($data);
         //合并处理
         $mg_list = array_merge_recursive(
             $this->hdArr($HtreportModel->shareRecord($startTime, $endTime)),                    //用户分享记录
@@ -16,20 +19,17 @@ class HtreportController {
             $this->hdArr($HtreportModel->channelsNewlyAdded($startTime, $endTime)),             //新增用户
             $this->hdArr($HtreportModel->inviteNewlyAdded($startTime, $endTime)),               //邀请新增
             $this->hdArr($HtreportModel->validUser($startTime, $endTime)),                      //有效用户
+            $this->hdArr($HtreportModel->leaveBehindUser($startTime, $endTime)),				//用户留存数
             $this->hdArr($HtreportModel->userPurchaseNumber($startTime, $endTime)),             //用户下单额
-            $this->hdArr($HtreportModel->userProfits($startTime, $endTime)),                    //净收入
+            $this->hdArr($HtreportModel->userFriendProfits($startTime, $endTime)),              //用户带来的毛利润
+            $this->hdArr($HtreportModel->userMaoProfits($startTime, $endTime)),					//用户的好友带来的毛利润
             $this->hdArr($HtreportModel->userFriendPurchaseNumber($startTime, $endTime))        //用户邀请的好友的下单额
         );
         foreach ($dates as $k => $v) {
-            if(isset($mg_list[$v])) {
-                $temp[$v] = array_merge($basic_list,$mg_list[$v]);
-            } else {
-                $temp[$v] = $basic_list;
-            }
+        	$temp[$v] = isset($mg_list[$v]) ? array_merge($basic_list,$mg_list[$v]) : $basic_list;
             $temp[$v]['date'] = $v;
         }
-        D(array_values($temp));
-        exit;
+        return info('ok', 1, array_values($temp));
 	}
 	public function channelReport() {
 
@@ -186,7 +186,7 @@ SELECT a.* FROM (
 	 */
 	public function channelOneReport()
 	{
-
+		$this->query();
 		$inner_main_sql = "SELECT DISTINCT(uid) FROM ngw_tracking  WHERE uid IS NOT NULL ";
 
 		//渠道
