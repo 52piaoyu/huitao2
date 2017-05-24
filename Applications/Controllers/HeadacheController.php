@@ -5,12 +5,17 @@ class HeadacheController {
         $data = $_REQUEST;
         if(!empty($data['source']) && !empty($data['system']) && !empty($data['imei']) || !empty($data['idfa'])) {
             //查看did_log表中是否存在这条记录 如果存在则表示已经激活过
-            !empty($data['imei']) ? $did['imei'] = $data['imei'] : $did['idfa'] = $data['idfa'];
-            if(userBehaviorVerificationController::queryUserDeviceInformation($did)) self::info('已经激活过了');
+            $did = !empty($data['imei']) ? $data['imei'] : $data['idfa'];
             //删除这个来源下已经存在库里并且还没有激活过的这条数据 报存最新的这条防止回调地址请求混乱
-            M()->exec("DELETE FROM ngw_tracking WHERE (idfa = '{$did}' OR imei = '{$did}' AND status=1) AND source = '{$data['source']}'");
+            if(!empty($data['imei'])) {
+                if(userBehaviorVerificationController::queryUserDeviceInformation(['imei' => $data['imei']])) self::info('已经激活过了', 1);
+                M()->exec("DELETE FROM ngw_tracking WHERE imei = '{$data['imei']}' AND status=1 AND source = '{$data['source']}'");
+            } else {
+                if(userBehaviorVerificationController::queryUserDeviceInformation(['idfa' => $data['idfa']])) self::info('已经激活过了', 1);
+                M()->exec("DELETE FROM ngw_tracking WHERE idfa = '{$data['idfa']}' AND status=1 AND source = '{$data['source']}'");
+            }
             M('tracking')->add($data);
-            self::info('ok', 1);
+            self::info('ok', 0);
         }
         self::info('缺少参数');
     }
@@ -21,8 +26,8 @@ class HeadacheController {
     public function click() {
         $data = $_REQUEST;
         isset($data['ip'], $data['idfa'], $data['callback_url'], $data['source']) OR self::info('缺少参数');
-        $where = "idfa = '{$data['idfa']}' and source = '{$data['source']}' and callback_url is null";
-        M('tracking')->where($where)->select() ? M('tracking')->where($where)->save(['callback_url' => urldecode($data['callback_url'])]) : self::info('还未通过效验或重复点击');
+        $where = "idfa = '{$data['idfa']}' and source = '{$data['source']}'";
+        M('tracking')->where($where)->select() ? M('tracking')->where($where)->save(['callback_url' => urldecode($data['callback_url'])]) : self::info('还未通过效验');
         self::info('ok', 1);
     }
     //接口关闭
@@ -30,7 +35,7 @@ class HeadacheController {
         self::info('产品已经下线');
     }
     // ios 安卓注册 回调
-    public function registerActivation($data = ['imei' => '123','uid' => '123', 'type' => 1]) {
+    public function registerActivation($data) {
         $where = !empty($data['imei']) ? "imei = '{$data['imei']}'" : "idfa = '{$data['idfa']}'";
         //检查库里是否有这条记录 并且获取到这条记录的来源 实现扣量~~
         if(!$self = M('tracking')->where($where)->select('single')) return;

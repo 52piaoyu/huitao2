@@ -58,6 +58,13 @@ class DuibaController extends AppController
 		try {
 			if(!A('Uid:updateUid',[$uid_where,$uid_data])) E('申请提现失败1');
 			if(!A('Pnow:addPnow',[$pnow_data])) E('申请提现失败2');
+			//通知用户有提现消息
+			(new MessageModel)->addMsg([
+				'uid'     => $this->dparam['user_id'],
+				'content' => '您申请提现'.$this->dparam['price'].'元',
+				'type'	  => 1,
+				'report_date' => date('Y-m-d')
+			]);
 		} catch (Exception $e) {
 			M()->rollback();
 			info($e->getMessage(),-1);
@@ -175,6 +182,12 @@ class DuibaController extends AppController
 					'pendcount' => $uid_info['pendcount'] +1,	//完成提现次数
 					'pendtime' => time(),	//本次提现完成时间
 				];
+				$message = [
+					'content' => '您已成功提现'.$_GET['timestamp'].'元',
+					'uid'	  => $p_info['uid'],
+					'type'	  => 1,
+					'report_date' => date('Y-m-d')
+				];
 			}else{
 				$uid_data = [
 					'pnow' => $uid_info['pnow'] - $p_info['price'],	//在提现金额
@@ -186,6 +199,12 @@ class DuibaController extends AppController
 					'duiba_etime'=>$_GET['timestamp'],
 					'info'=>$url,
 				];
+				$message = [
+					'content' => '您申请提现'.$p_info['price'].'元失败! 请您重新申请提现或联系客服进行提现',
+					'uid'	  => $p_info['uid'],
+					'type'	  => 1,
+					'report_date' => date('Y-m-d')
+				];
 			}
 			// D($p_where);
 			// D($p_data);
@@ -195,6 +214,7 @@ class DuibaController extends AppController
 			try {
 				if(!A('Pnow:updatePnow',[$p_where,$p_data])) E('修改提现表失败');
 				if(!A('Uid:updateUid',[$uid_where,$uid_data])) E('申请提现失败1');
+				(new MessageModel)->addMsg($message) OR E('申请提现失败');
 			} catch (Exception $e) {
 				M()->rollback();
 				info($e->getMessage(),-1);

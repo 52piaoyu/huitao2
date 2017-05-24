@@ -232,16 +232,33 @@ class GoodsShowController extends AppController
         $this->gtype = 7;
         $page_no = ($this->dparam['page_no'] - 1) * $this->dparam['page_size'] ;
         $page_size = $page_no + $this->dparam['page_size'] - 1;
-        $goods = R()->getListPage('newLists',$page_no,$page_size);
-        if(R()->size('newLists')>1)
+        $goods = R()->getListPage('nnLists',$page_no,$page_size);
+        if(R()->size('nnLists')>1)
             info(['status'=>1,'msg'=>'操作成功!','data'=>$goods,'total'=>count($goods)]);
         $sql = $this->getSQL();
         $goods = M()->query($sql,'all');
         if(!$this->silent && empty($goods)) info('暂无该分类商品',-1);
-        $this->redisToGoods('newLists',$goods);
+        $this->redisToGoods('nnLists',$goods);
         $goods = $this->page($goods);
         info(['status'=>1,'msg'=>'操作成功!','data'=>$goods,'total'=>count($goods)]);
      }
+    /**
+     * [combine99 9块9(混合)]
+     */
+    public function combine99(){
+        $this->gtype = 8;
+        $page_no = ($this->dparam['page_no'] - 1) * $this->dparam['page_size'] ;
+        $page_size = $page_no + $this->dparam['page_size'] - 1;
+        $goods = R()->getListPage('nnLists',$page_no,$page_size);
+        info(['status'=>1,'msg'=>'操作成功!','data'=>$goods,'total'=>count($goods)]);
+        $sql = $this->getSQL();
+        $goods = M()->query($sql,'all');
+        if(!$this->silent && empty($goods)) info('暂无该分类商品',-1);
+        $this->redisToGoods('nnLists',$goods);
+        $goods = $this->page($goods);
+        info(['status'=>1,'msg'=>'操作成功!','data'=>$goods,'total'=>count($goods)]);
+}
+
 
 
     /**
@@ -291,6 +308,11 @@ class GoodsShowController extends AppController
         //新品
         if($this->gtype==7){
             $sql="SELECT a.*,FORMAT((b.rating/100*b.price*".parent::PERCENT."),2) as rating,b.title,b.seller_name nick,b.url,b.store_type,b.pict_url,b.price,b.category_id cid,b.category,b.deal_price zk_final_price,b.item_url,b.reduce,b.volume,concat('".parent::SHARE_URL."',b.num_iid) share_url FROM ngw_goods_info a JOIN ngw_goods_online b ON a.num_iid = b.num_iid AND a.favorite_id = b.favorite_id WHERE a.is_board = 0 AND a.is_show = 1 AND a.is_new = 1 AND a.status=1 AND b.status= 1 GROUP BY a.num_iid ORDER BY a.is_front DESC,score DESC {$this->limit}";
+        }
+
+        //9.9所有商品，不分类
+        if($this->gtype==8){
+            $sql= "SELECT a.*,FORMAT((b.rating/100*b.price*".parent::PERCENT."),2) as rating,b.title,b.seller_name nick,b.url,b.store_type,b.pict_url,b.price,b.category_id cid,b.category,b.deal_price zk_final_price,b.item_url,b.reduce,b.volume,concat('".parent::SHARE_URL."',b.num_iid) share_url FROM ngw_goods_info a JOIN ngw_goods_online b ON a.num_iid = b.num_iid AND a.favorite_id = b.favorite_id WHERE a.is_board = 0 AND a.is_show = 1 AND a.status =1 AND b.status= 1 AND b.price <= 19.9  GROUP BY a.num_iid ORDER BY a.is_front DESC ,score DESC {$this->limit}";
         }
         return $sql;
     }

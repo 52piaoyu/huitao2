@@ -2,7 +2,7 @@
 class HtreportController {
 	public function query() {
         if(!empty($_REQUEST['start_time']) && !empty($_REQUEST['end_time']) && !empty($_REQUEST['type'])  && !empty($_REQUEST['media_id'])) {
-        	$data = connectionArray(M('tracking')->where("status in(2,3,4) AND source = '{$_REQUEST['media_id']}' AND system = {$_REQUEST['type']}")->select('all'), 'uid');
+        	$data = connectionArray(M('tracking')->where("uid is not null AND source = '{$_REQUEST['media_id']}' AND system = {$_REQUEST['type']}")->select('all'), 'uid');
         	$startTime = $_REQUEST['start_time'];
         	$endTime   = $_REQUEST['end_time'];
         } else info('缺少参数', -1);
@@ -187,6 +187,7 @@ SELECT a.* FROM (
 	public function channelOneReport()
 	{
 		$this->query();
+		exit;
 		$inner_main_sql = "SELECT DISTINCT(uid) FROM ngw_tracking  WHERE uid IS NOT NULL ";
 
 		//渠道
