@@ -232,11 +232,11 @@ class GoodsShowController extends AppController
         $this->gtype = 7;
         $page_no = ($this->dparam['page_no'] - 1) * $this->dparam['page_size'] ;
         $page_size = $page_no + $this->dparam['page_size'] - 1;
-        $goods = R()->getListPage('nnLists',$page_no,$page_size);
-        if(R()->size('nnLists')>1)
-            info(['status'=>1,'msg'=>'操作成功!','data'=>$goods,'total'=>count($goods)]);
-        $sql = $this->getSQL();
-        $goods = M()->query($sql,'all');
+         $goods = R()->getListPage('newLists',$page_no,$page_size);
+         if(R()->size('newLists')>1)
+             info(['status'=>1,'msg'=>'操作成功!','data'=>$goods,'total'=>count($goods)]);
+         $sql = $this->getSQL();
+         $goods = M()->query($sql,'all');
         if(!$this->silent && empty($goods)) info('暂无该分类商品',-1);
         $this->redisToGoods('nnLists',$goods);
         $goods = $this->page($goods);
@@ -250,7 +250,8 @@ class GoodsShowController extends AppController
         $page_no = ($this->dparam['page_no'] - 1) * $this->dparam['page_size'] ;
         $page_size = $page_no + $this->dparam['page_size'] - 1;
         $goods = R()->getListPage('nnLists',$page_no,$page_size);
-        info(['status'=>1,'msg'=>'操作成功!','data'=>$goods,'total'=>count($goods)]);
+        if(R()->size('nnLists')>1)
+            info(['status'=>1,'msg'=>'操作成功!','data'=>$goods,'total'=>count($goods)]);
         $sql = $this->getSQL();
         $goods = M()->query($sql,'all');
         if(!$this->silent && empty($goods)) info('暂无该分类商品',-1);

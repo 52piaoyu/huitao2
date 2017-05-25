@@ -183,7 +183,7 @@ class DuibaController extends AppController
 					'pendtime' => time(),	//本次提现完成时间
 				];
 				$message = [
-					'content' => '您已成功提现'.$_GET['timestamp'].'元',
+					'content' => '您已成功提现'.$p_info['price'].'元',
 					'uid'	  => $p_info['uid'],
 					'type'	  => 1,
 					'report_date' => date('Y-m-d')
