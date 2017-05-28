@@ -55,10 +55,10 @@ class LoginController extends AppController
 			info('网络异常!',-1);
 		}
 		M()->commit();
-		if(!empty($this->dparam['idfa']))
-			(new HeadacheController)->registerActivation(['idfa' => $this->dparam['idfa'], 'uid' => $this->dparam['uid'], 'type' => 1]);
-		else if(!empty($this->dparam['imei']))
-			(new HeadacheController)->registerActivation(['imei' => $this->dparam['imei'], 'uid' => $this->dparam['uid'], 'type' => 1]);
+		// if(!empty($this->dparam['idfa']))
+		// 	(new HeadacheController)->registerActivation(['idfa' => $this->dparam['idfa'], 'uid' => $this->dparam['uid'], 'type' => 1]);
+		// else if(!empty($this->dparam['imei']))
+		// 	(new HeadacheController)->registerActivation(['imei' => $this->dparam['imei'], 'uid' => $this->dparam['uid'], 'type' => 1]);
 		$this->optInfo(['msg'=>'注册成功!','status'=>1]);
 
 	}

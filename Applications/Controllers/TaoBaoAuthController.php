@@ -36,6 +36,12 @@ class TaoBaoAuthController extends AppController {
             if($name = M()->query("SELECT * FROM ngw_friend_log WHERE phone = (select phone from ngw_uid where objectId='{$data['user_id']}') AND status=1", 'single'))
                 !(new UserController)->bindMasters(false, $data['user_id'], $name['sfuid']) OR M('friend_log')->where(['phone' => ['=', $name['phone']]])->save(['status' => 2]);
 
+            $user = M('uid')->where(['objectId' => ['=', $data['user_id']]])->select('single');
+            if(!empty($user['idfa'])) {
+                (new HeadacheController)->registerActivation(['type' => 5, 'uid' => $data['user_id'], 'idfa' => $user['idfa']]);
+            } else if(!empty($user['imei'])) {
+                (new HeadacheController)->registerActivation(['type' => 5, 'uid' => $data['user_id'], 'imei' => $user['imei']]);
+            }
             info('授权成功',1);
         }
         info('缺少参数',-1);

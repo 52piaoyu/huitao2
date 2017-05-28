@@ -36,7 +36,7 @@ class HeadacheController {
     }
     // ios 安卓注册 回调
     public function registerActivation($data) {
-        $where = !empty($data['imei']) ? "imei = '{$data['imei']}'" : "idfa = '{$data['idfa']}'";
+        $where = !empty($data['imei']) ? "imei = '{$data['imei']}' AND status = 1" : "idfa = '{$data['idfa']}' AND status = 1";
         //检查库里是否有这条记录 并且获取到这条记录的来源 实现扣量~~
         if(!$self = M('tracking')->where($where)->select('single')) return;
         //暂存到库里 状态改为3
@@ -47,18 +47,19 @@ class HeadacheController {
             'report_date' => date('Y-m-d')
         ]);
         //查询这个来源下还没回调的数据 并且这些数据其他来源也没有回调过
-        $callback = M()->query("SELECT idfa , imei , status , callback_url,source FROM ngw_tracking WHERE( idfa NOT IN( SELECT idfa FROM ngw_tracking WHERE status = 2 AND idfa IS NOT NULL) OR imei NOT IN( SELECT imei FROM ngw_tracking WHERE status = 2 AND imei IS NOT NULL)) AND status = 3 AND source = '{$self['source']}'", 'all');
+        $callback = M()->query("SELECT idfa , imei , status , callback_url,source,createdAt FROM ngw_tracking WHERE(idfa NOT IN( SELECT idfa FROM ngw_tracking WHERE status = 2 AND idfa IS NOT NULL) OR imei NOT IN(SELECT imei FROM ngw_tracking WHERE status = 2 AND imei IS NOT NULL)) AND status = 3 AND source = '{$self['source']}' and DATE_ADD(createdAt, INTERVAL 1 day) >= now() order by createdAt desc", 'all');
         //获取回调率以及回调基数
         list($base, $percentage) = $this->setBase($self['system']);
         if(count($callback) >= $base) {
             $key = array_rand($callback, $percentage);
             foreach(is_array($key) ? $key : [$key] as $v) {
-                //数据状态改为2 回调对方时把对方返回值也入库处理
-                $this->callback($callback[$v]['idfa'], $callback[$v]['imei'], $callback[$v]['callback_url'], 1);
+                $this->callback($callback[$v]['idfa'], $callback[$v]['imei'], $callback[$v]['callback_url'], $data['type']);
                 unset($callback[$v]);
             }
-            $did = connectionArray($callback, 'did');
-            M('tracking')->where("imei IN({$did}) OR idfa IN({$did})")->save(['status' => 4]);
+            if(!empty($callback)) {
+                $did = array_filter(array_merge(array_column($callback, 'idfa'), array_column($callback, 'imei')));
+                if($did) M('tracking')->where("imei IN(".(connectionArray($did)).") OR idfa IN(".(connectionArray($did)).")")->save(['status' => 4]);
+            }
         }
     }
     public function callback($idfa, $imei, $callbackUrl, $type) {
@@ -71,7 +72,7 @@ class HeadacheController {
     //根据手机系统来设置回调率以及回调基数
     public function setBase($system) {
         static $file = [
-            1 => [1, 1],
+            1 => [10, 2],
             2 => [1, 1]
         ];
         return isset($file[$system]) ? $file[$system] : [10000, 1];
@@ -80,7 +81,7 @@ class HeadacheController {
     public function active($data) {
         if(!empty($data)) {
             $uid = connectionArray($data);
-            $sql = "SELECT a.uid , a.idfa , a.imei , a.callback_url , a.type FROM( SELECT * FROM ngw_tracking WHERE status != 2) a JOIN( SELECT uid , idfa , imei FROM ngw_did_log WHERE uid IN({$uid}) GROUP BY imei , idfa) b ON a.idfa = b.idfa OR a.imei = b.imei";
+            $sql = "SELECT a.uid , a.idfa , a.imei , a.callback_url , a.type FROM(SELECT * FROM ngw_tracking WHERE status != 2) a JOIN( SELECT uid , idfa , imei FROM ngw_did_log WHERE uid IN({$uid}) GROUP BY imei , idfa) b ON a.idfa = b.idfa OR a.imei = b.imei";
             $data = M()->query($sql, 'all');
             //发起回调
             foreach($data as $v) {

@@ -29,6 +29,7 @@ class DailyReportController extends Controller
     }
 
     public function insertdata(){
+         echo date("Y-m-d H:i:s")."<br/>";
          echo "<span>查询时间:</span><input type='text' name='date' style='display: inline-block' value=".$this->st."> <br/>";
          echo "<span>添加备注:</span><span style='color: red'>".$this->description."</span><br/>";
          echo "<hr/>";

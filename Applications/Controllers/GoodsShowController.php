@@ -205,21 +205,19 @@ class GoodsShowController extends AppController
     /**
      * [soldGoods 热卖商品(混合)]
      */
-     public function soldGoods()
-     {
+     public function soldGoods() {
         $this->gtype = 5;
         $page_no = ($this->dparam['page_no'] - 1) * $this->dparam['page_size'] ;
         $page_size = $page_no + $this->dparam['page_size'] - 1;
+        //查询redis 是否有商品 如果有则return 如果没有则查库然后 清空当前redis数据 再存一遍
         $goods = R()->getListPage('soldLists',$page_no,$page_size);
-        if(R()->size('soldLists')>1)
-            info(['status'=>1,'msg'=>'操作成功!','data'=>$goods,'total'=>count($goods)]);
-        $sql = $this->getSQL();
-        $goods = M()->query($sql,'all');
-
+        $total = count($goods);
+        if($total > 1) info(['status'=>1,'msg'=>'操作成功!','data'=>$goods,'total'=>$total]);
+        $goods = M()->query($this->getSQL(),'all');
         if(!$this->silent && empty($goods)) info('暂无该分类商品',-1);
+        R()->delFeild('soldLists');
         $this->redisToGoods('soldLists',$goods);
-        // $goods = $this->page($goods);
-        info(['status'=>1,'msg'=>'操作成功!','data'=>$goods,'total'=>count($goods)]);
+        info(['status'=>1,'msg'=>'操作成功!','data'=>$this->page($goods),'total'=>count($goods)]);
 
      }
 
@@ -313,7 +311,7 @@ class GoodsShowController extends AppController
 
         //9.9所有商品，不分类
         if($this->gtype==8){
-            $sql= "SELECT a.*,FORMAT((b.rating/100*b.price*".parent::PERCENT."),2) as rating,b.title,b.seller_name nick,b.url,b.store_type,b.pict_url,b.price,b.category_id cid,b.category,b.deal_price zk_final_price,b.item_url,b.reduce,b.volume,concat('".parent::SHARE_URL."',b.num_iid) share_url FROM ngw_goods_info a JOIN ngw_goods_online b ON a.num_iid = b.num_iid AND a.favorite_id = b.favorite_id WHERE a.is_board = 0 AND a.is_show = 1 AND a.status =1 AND b.status= 1 AND b.price <= 19.9  GROUP BY a.num_iid ORDER BY a.is_front DESC ,score DESC {$this->limit}";
+            $sql= "SELECT a.*,FORMAT((b.rating/100*b.price*".parent::PERCENT."),2) as rating,b.title,b.seller_name nick,b.url,b.store_type,b.pict_url,b.price,b.category_id cid,b.category,b.deal_price zk_final_price,b.item_url,b.reduce,b.volume,concat('".parent::SHARE_URL."',b.num_iid) share_url FROM ngw_goods_info a JOIN ngw_goods_online b ON a.num_iid = b.num_iid AND a.favorite_id = b.favorite_id WHERE a.is_board = 0 AND a.is_show = 1 AND a.status =1 AND b.status= 1 AND b.price <= 19.9  GROUP BY a.num_iid ORDER BY a.source ASC,a.created_date DESC,is_front DESC ,score DESC {$this->limit}";
         }
         return $sql;
     }
@@ -517,7 +515,6 @@ class GoodsShowController extends AppController
 
 
         if(!R()->hashFeildExisit('detailLists',$this->dparam['num_iid'])){
-
             $sql                = " SELECT * FROM ngw_goods_online WHERE num_iid = '{$this->dparam['num_iid']}' ";
             $info               = M()->query($sql,'single');
             empty($info) && info('商品不存在',-1);

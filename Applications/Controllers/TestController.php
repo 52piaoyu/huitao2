@@ -1,6 +1,6 @@
 <?php
 class TestController extends AppController {
     public function test() {
-        phpinfo();
+       D( aes_decode());
     }
 }

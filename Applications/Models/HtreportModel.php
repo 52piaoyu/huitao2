@@ -11,7 +11,7 @@ class HtreportModel {
     }
     //用户的分享率 (分享数/去重用户登录数)
     public function shareRate($startTime, $endTime) {
-        return M()->query("SELECT round(a. share / b.num * 100 , 2) s_percent, a.report_date FROM( SELECT count(uid) share , report_date FROM ngw_share_log WHERE uid IN(".(self::$uid).") AND report_date BETWEEN '{$startTime}' AND '{$endTime}' GROUP BY report_date) a JOIN(SELECT count(DISTINCT uid) num , report_date FROM ngw_uid_login_log WHERE uid IN(".(self::$uid).") AND report_date BETWEEN '{$startTime}' AND '{$endTime}' GROUP BY report_date) b ON b.report_date = a.report_date", 'all');
+        return M()->query("SELECT round(a. share / b.num * 100 , 2) s_percent, a.report_date FROM( SELECT count(DISTINCT uid) share , report_date FROM ngw_share_log WHERE uid IN(".(self::$uid).") AND report_date BETWEEN '{$startTime}' AND '{$endTime}' GROUP BY report_date) a JOIN(SELECT count(DISTINCT uid) num , report_date FROM ngw_uid_login_log WHERE uid IN(".(self::$uid).") AND report_date BETWEEN '{$startTime}' AND '{$endTime}' GROUP BY report_date) b ON b.report_date = a.report_date", 'all');
     }
     //用户新增 (成功注册且有过淘宝授权的)
     public function channelsNewlyAdded($startTime, $endTime) {
@@ -27,7 +27,7 @@ class HtreportModel {
     }
     //留存用户数 (除掉今天新增的用户 有过登录记录的 则为留存用户)
     public function leaveBehindUser($startTime, $endTime) {
-        return M()->query("SELECT a.report_date ,(a.uid - b.uid) keep FROM( SELECT report_date , count(DISTINCT(uid)) uid FROM ngw_uid_login_log WHERE uid IN(".(self::$uid).") AND report_date BETWEEN '{$startTime}' AND '{$endTime}' GROUP BY report_date) a JOIN( SELECT count(DISTINCT(c.uid)) uid , c.report_date FROM ngw_uid_login_log c JOIN( SELECT uid , report_date FROM ngw_tracking WHERE uid IS NOT NULL) b ON b.report_date = c.report_date AND b.uid = c.uid AND c.report_date BETWEEN '{$startTime}' AND '{$endTime}' GROUP BY c.report_date) b ON a.report_date = b.report_date;", 'all');
+        return M()->query("SELECT a.num - b.number keep , a.report_date FROM( SELECT count(DISTINCT uid) num , report_date FROM ngw_uid_login_log WHERE uid IN(".(self::$uid).") GROUP BY report_date) a JOIN( SELECT count(DISTINCT uid) number , report_date FROM ngw_tracking WHERE uid IS NOT NULL GROUP BY report_date) b ON b.report_date = a.report_date", 'all');
     }
     //统计用户的下单额(刨除掉退单的)
     public function userPurchaseNumber($startTime, $endTime) {

@@ -1,15 +1,15 @@
 <?php
 class HtreportController {
 	public function query() {
-        if(!empty($_REQUEST['start_time']) && !empty($_REQUEST['end_time']) && !empty($_REQUEST['type'])  && !empty($_REQUEST['media_id'])) {
+        if(!empty($_REQUEST['start_time']) && !empty($_REQUEST['end_time']) && !empty($_REQUEST['media_id'])) {
         	$startTime = $_REQUEST['start_time'];
         	//如果截止日期超过当前日期或者大于当前日期则重新计算
         	if($_REQUEST['end_time'] >= date('Y-m-d')){
-        		M('report')->where(['report_date' => ['=', date('Y-m-d')], 'source' => ['=', $_REQUEST['media_id']], 'system' => ['=', $_REQUEST['type']] ])->save();
+        		M('report')->where(['report_date' => ['=', date('Y-m-d')], 'source' => ['=', $_REQUEST['media_id']] ])->save();
         		$endTime = date('Y-m-d');
         	} else $endTime = $_REQUEST['end_time'];
         	//查询中间表是否有数据
-        	$intermediateTableData = M('report')->where("report_date BETWEEN '{$startTime}' AND '{$endTime}' AND source = '{$_REQUEST['media_id']}' AND system = {$_REQUEST['type']} order by report_date asc")->select('all');
+        	$intermediateTableData = M('report')->where("report_date BETWEEN '{$startTime}' AND '{$endTime}' AND source = '{$_REQUEST['media_id']}' order by report_date asc")->select('all');
         	//从中间表里查询出来的数据最后记录的一个日期==当前截止日期  且 开始日期==查出来的第一条记录的日期 则直接return掉
         	if(!empty($intermediateTableData) && (end($intermediateTableData))['report_date'] == $endTime && $intermediateTableData[0]['report_date'] == $startTime){
         		foreach($intermediateTableData as &$v) {
@@ -17,20 +17,33 @@ class HtreportController {
         		}
         		info('ok', 1, $intermediateTableData);
         	}
-        	//进行计算汇总数据
-        	$data = $this->calculatio($startTime, $endTime, connectionArray(M('tracking')->where("uid is not null AND source = '{$_REQUEST['media_id']}' AND system = {$_REQUEST['type']}")->select('all'), 'uid'));
-        	$fields  = M('report')->getTableFields();
-        	foreach($fields as $k => $v) if($v == 'id') unset($fields[$k]);
-        	$sql = 'REPLACE INTO ngw_report('.('`'.implode('`,`', $fields).'`').')VALUES';
-        	foreach($data as $v) {
-        		//设置字段默认值为0
-        		foreach($fields as $value) if(empty($v[$value])) $v[$value] = 0;
-        		$sql .= '('.$v['fee'].','.$v['benifit'].','.$v['td_fee'].','.$v['td_benifit'].','.$v['share'].','.$v['s_percent'].','.$v['keep'].','.$v['track_num'].','.$v['click_num'].','.$v['invatation_num'].','."'{$_REQUEST['media_id']}'".','.$_REQUEST['type'].','."'{$v['date']}'".'),';
-        	}
-        	M()->query(rtrim($sql, ','));
+        	//渠道用户进行计算汇总数据
+        	$data = $this->calculatio($startTime, $endTime, connectionArray(M('tracking')->where("uid is not null AND source = '{$_REQUEST['media_id']}'")->select('all'), 'uid'));
+        	//全部用户进行计算汇总数据
+        	// $data = $this->calculatio($startTime, $endTime, connectionArray(M('uid')->field('objectId')->select('all'), 'objectId'));
+        	//存入中间表
+        	$this->addData($data);
         	return info('ok', 1, $data);
 
         } else info('缺少参数', -1);
+	}
+	//入渠道报表 中间表
+	private function addData($data) {
+		$fields  = M('report')->getTableFields();
+		foreach($fields as $k => $v){
+			if($v == 'id') unset($fields[$k]);
+			if($v == 'system') unset($fields[$k]);
+		}
+		$sql = 'REPLACE INTO ngw_report('.('`'.implode('`,`', $fields).'`').')VALUES';
+		foreach($data as $v) {
+			//设置字段默认值为0
+			foreach($fields as $value) if(empty($v[$value])) $v[$value] = 0;
+			$sql .= '('.$v['fee'].','.$v['benifit'].','.$v['td_fee'].','.$v['td_benifit'].','.$v['share'].','.$v['s_percent'].','.$v['keep'].','.$v['track_num'].','.$v['click_num'].','.$v['invatation_num'].',';
+			$sql .= $v['source'] ? "'{$v['source']}'," : "'{$_REQUEST['media_id']}',";
+			$sql .= "'".(date('Y-m-d'))."'";
+			$sql .= '),';
+		}
+		return M()->query(rtrim($sql, ','));
 	}
 	public function calculatio($startTime, $endTime, $data) {
 		//生成日期数组
