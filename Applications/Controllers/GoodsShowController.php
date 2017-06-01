@@ -526,31 +526,6 @@ class GoodsShowController extends AppController
         $info = R()->getHashSingle('detailLists',(string)$this->dparam['num_iid']);
         info('请求成功',1,$info);
     }
-
-    /**
-     * [sortGoods 按分数排序按前置和分数降序排列]
-     */
-    // private function sortGoods($arr)
-    // {
-    //     foreach ($arr as $k => $v) {
-    //         $sort[$k]   = $v['score'];
-    //         $front[$k]  = $v['is_front'];
-    //     }
-    //     array_multisort($front,SORT_DESC,$sort,SORT_DESC,$arr);
-    //     return $arr;
-    // }
-//----
-
-
-
-
-
-
-
-
-
-
-
     /**
      * 获取邀请页的三个商品详情
      */
