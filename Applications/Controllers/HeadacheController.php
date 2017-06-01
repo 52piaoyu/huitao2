@@ -134,7 +134,7 @@ class HeadacheController {
     }
     public function  task_log(){
         $edate=date("Y-m-d");
-        $sdate=date("Y-m-d",strtotime($edate." -10 day"));
+        $sdate=date("Y-m-d",strtotime($edate." -7 day"));
         $type='2';
         if(isset($_REQUEST["sdate"])&&!empty($_REQUEST["sdate"])){
             $sdate = $_REQUEST["sdate"];
@@ -142,7 +142,7 @@ class HeadacheController {
         if(isset($_REQUEST["edate"])&&!empty($_REQUEST["edate"])){
             $edate = $_REQUEST["edate"];
         }
-        if(isset($_REQUEST["type"])&&!empty($_REQUEST["type"])){
+        if(isset($_REQUEST["type"])&&$_REQUEST["type"]!=null){
             $type = $_REQUEST["type"];
         }
         $sql="select report_date,task_str from ngw_total_daily_report where report_date BETWEEN '".$sdate."' and '".$edate."'  and type='".$type."' ORDER BY report_date ASC";
@@ -177,9 +177,103 @@ class HeadacheController {
 
 
     }
+    //分享次数，点击，授权，活跃用户
+    public function user_active(){
+        $edate=date("Y-m-d");
+        $sdate=date("Y-m-d",strtotime($edate." -7 day"));
+        $type='2';
+        if(isset($_REQUEST["sdate"])&&!empty($_REQUEST["sdate"])){
+            $sdate = $_REQUEST["sdate"];
+        }
+        if(isset($_REQUEST["edate"])&&!empty($_REQUEST["edate"])){
+            $edate = $_REQUEST["edate"];
+        }
+        if(isset($_REQUEST["type"])&&$_REQUEST["type"]!=null){
+            $type = $_REQUEST["type"];
+        }
+        $type_con='';
+        if($type!='2'){
+            $type_con="AND type='{$type}'";
+        }
+        //获取时间数组
+        $seconds = strtotime($sdate);
+        $seconde = strtotime($edate);
+        $date_bet=($seconde - $seconds) / 86400;
+//        echo $date_bet;
+        $this_date=$sdate;
+        $date_line=[$sdate];
+         for($i=0;$i<$date_bet;$i++){
+             $this_date=date("Y-m-d",strtotime($this_date." +1 day"));
+             array_push($date_line,$this_date);
+         }
+
+        $res_e=[];
+        $res_e['date_line']=$date_line;
+        $res_e['merge']=['分享次数','分享次数-去重','点击总数','授权淘宝次数','活跃用户'];
+        $res_e['series']['share']=[];
+        $res_e['series']['share_q']=[];
+        $res_e['series']['click']=[];
+        $res_e['series']['taobao']=[];
+        $res_e['series']['active_user']=[];
+
+        //获取分享次数
+        $sql = "select report_date,sum(share) num from ngw_share_log where report_date BETWEEN '".$sdate."' and '".$edate."'".$type_con." GROUP BY report_date ORDER BY report_date ASC";
+        $res=M()->query($sql,'all');
+        $res = array_column($res, 'num', 'report_date');
+        $res_e['series']['share']=self::fomart_arr($res_e['date_line'],$res_e['series']['share'],$res);
+
+        //获取分享次数--去重
+        $sql = "select report_date,count(distinct(uid)) num from ngw_share_log where report_date BETWEEN '".$sdate."' and '".$edate."'".$type_con." GROUP BY report_date ORDER BY report_date ASC";
+        $res=M()->query($sql,'all');
+        $res = array_column($res, 'num', 'report_date');
+        $res_e['series']['share_q']=self::fomart_arr($res_e['date_line'],$res_e['series']['share_q'],$res);
+
+        //获取点击次数-未去重
+        $sql = "select report_date,sum(click) num from ngw_click_log where report_date BETWEEN '".$sdate."' and '".$edate."'".$type_con." GROUP BY report_date ORDER BY report_date ASC";
+        $res=M()->query($sql,'all');
+        $res = array_column($res, 'num', 'report_date');
+        $res_e['series']['click']=self::fomart_arr($res_e['date_line'],$res_e['series']['click'],$res);
+
+        //获取授权淘宝次数
+        $type_taobao_con='';
+        if($type=='1'){
+            $type_taobao_con="uid in(select objectId from ngw_uid where type=1) and ";
+
+        }else if($type=='0'){
+            $type_taobao_con="uid in(select objectId from ngw_uid where type=0) and ";
+        }
+        $sql = "SELECT report_date,count(DISTINCT uid) num from ngw_taobao_log where ".$type_taobao_con." report_date BETWEEN '".$sdate."' and '".$edate."' GROUP BY report_date ORDER BY report_date ASC";
+        $res=M()->query($sql,'all');
+        $res = array_column($res, 'num', 'report_date');
+        $res_e['series']['taobao']=self::fomart_arr($res_e['date_line'],$res_e['series']['taobao'],$res);
+
+        //获取活跃用户
+        $sql = "select report_date,count(DISTINCT(uid)) num from ngw_click_log where report_date BETWEEN '".$sdate."' and '".$edate."'".$type_con." GROUP BY report_date ORDER BY report_date ASC";
+        $res=M()->query($sql,'all');
+        $res = array_column($res, 'num', 'report_date');
+        $res_e['series']['active_user']=self::fomart_arr($res_e['date_line'],$res_e['series']['active_user'],$res);
+
+//        D($res_e);
+        info("列出成功",1,$res_e);
+
+
+    }
+
     public static function task_str_explain($str){
         if($str==''||$str==null)  $str="1-0;2-0;3-0;4-0;5-0;6-0;7-0;8-0;";
         $arr = explode(';',$str);
         return  $arr;
+    }
+    public static function fomart_arr($date_line,$merge_arr,$res){
+        foreach($date_line as  $k => $v){
+            if(isset($res[$v])){
+                array_push($merge_arr,$res[$v]);
+            }
+            else{
+                array_push($merge_arr,0);
+            }
+
+        }
+        return $merge_arr;
     }
 }
