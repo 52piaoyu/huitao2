@@ -20,8 +20,8 @@ class newDeviceUserKeep extends keepReport{
     public function createSQL(){
         $this->sql = sprintf($this->sql,$this->inner_sql);
 
-        if($this->type == 'month')
-            $this->sql = sprintf($this->topsql,'%Y-%u','device_num','device_num',$this->sql);
+//        if($this->type == 'month')
+//            $this->sql = sprintf($this->topsql,'%Y-%u','device_num','device_num',$this->sql);
         return $this->sql;
     }
 

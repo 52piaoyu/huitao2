@@ -20,8 +20,8 @@ class validUserKeep extends keepReport{
 	public function createSQL(){
         $this->sql = sprintf($this->sql,$this->inner_sql);
 
-        if($this->type == 'month')
-            $this->sql = sprintf($this->topsql,'%Y-%u','valid_num','valid_num',$this->sql);
+//        if($this->type == 'month')
+//            $this->sql = sprintf($this->topsql,'%Y-%u','valid_num','valid_num',$this->sql);
         return $this->sql;
     }
 

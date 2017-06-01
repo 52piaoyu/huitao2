@@ -17,8 +17,8 @@ class newUserKeep extends keepReport{
     public function createSQL(){
         $this->sql = sprintf($this->sql,$this->inner_sql);
 
-        if($this->type == 'month')
-            $this->sql = sprintf($this->topsql,'%Y-%u','new_num','new_num',$this->sql);
+//        if($this->type == 'month')
+//            $this->sql = sprintf($this->topsql,'%Y-%u','new_num','new_num',$this->sql);
         return $this->sql;
     }
 

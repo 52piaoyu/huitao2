@@ -132,4 +132,54 @@ class HeadacheController {
         }
       info("暂无数据",'-2');
     }
+    public function  task_log(){
+        $edate=date("Y-m-d");
+        $sdate=date("Y-m-d",strtotime($edate." -10 day"));
+        $type='2';
+        if(isset($_REQUEST["sdate"])&&!empty($_REQUEST["sdate"])){
+            $sdate = $_REQUEST["sdate"];
+        }
+        if(isset($_REQUEST["edate"])&&!empty($_REQUEST["edate"])){
+            $edate = $_REQUEST["edate"];
+        }
+        if(isset($_REQUEST["type"])&&!empty($_REQUEST["type"])){
+            $type = $_REQUEST["type"];
+        }
+        $sql="select report_date,task_str from ngw_total_daily_report where report_date BETWEEN '".$sdate."' and '".$edate."'  and type='".$type."' ORDER BY report_date ASC";
+        $res=M()->query($sql,"all");
+        foreach ($res as $k => $v){
+            $res[$k]['task']=self::task_str_explain($v['task_str']);
+            array_pop($res[$k]['task']);
+            unset($res[$k]['task_str']);
+
+            foreach ($res[$k]['task']  as $i =>$j){
+                $arr_num=explode('-',$j);
+                $res[$k]['task'][$i]=$arr_num[1];
+            }
+        }
+//        D($res);
+        $export_res=[];
+        $export_res['date_line']=[];
+        $export_res['series']=[];
+        $export_res['meg']=['完成商品分享','绑定淘宝账号','完成一次好友邀请','完成一次下单','获得一个返利红包','成功邀请一名好友','好友累计2次下单','好友累计2次收货'];
+        foreach ($res as $k =>$v){
+            array_push($export_res['date_line'],$v['report_date']);
+            foreach ($v['task'] as $i =>$j){
+                if(!isset($export_res['series'][$export_res['meg'][$i]])){
+                    $export_res['series'][$export_res['meg'][$i]]=[];
+                }
+                array_push($export_res['series'][$export_res['meg'][$i]],$j);
+            }
+
+        }
+
+        info("列出成功",1,$export_res);
+
+
+    }
+    public static function task_str_explain($str){
+        if($str==''||$str==null)  $str="1-0;2-0;3-0;4-0;5-0;6-0;7-0;8-0;";
+        $arr = explode(';',$str);
+        return  $arr;
+    }
 }

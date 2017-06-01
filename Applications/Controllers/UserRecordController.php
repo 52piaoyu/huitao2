@@ -23,8 +23,7 @@ class UserRecordController extends AppController
 	/**
 	 * [click 记录用户点击行为]
 	 */
-	public function clickRecord($uid,$numid,$system)
-	{
+	public function clickRecord($uid,$numid,$system) {
 		if(!isset($uid) || !isset($numid) || !isset($system)) info('数据不完整Record',-1);
 
 		$this->type = 'click';
@@ -32,19 +31,36 @@ class UserRecordController extends AppController
 		$this->numid = $numid;
 		$this->system = $system;
 		$this->commit(['uid'=>$this->uid,'content'=>$this->numid ,'type'=>$this->system]);
-
 		if(!$this->status) return;
-
 		$this->key = "history_{$uid}";
-
-		//用户点击行为额外保存在redis 中作为单个用户的浏览商品记录
+		// 用户浏览的商品记录
 		if(R()->hashFeildExisit($this->key,$this->type))
 			$data = $this->update();
 		else
 			R()->hsetnx($this->key,$this->type,[$numid => $this->goodInfo($numid)],$this->expire);
-
 	}
-
+	/**
+	 * [usersBrowseMerchandiseRecords 用户历史浏览记录]
+	 * @param  [type] $uid   [description]
+	 * @param  [type] $numid [description]
+	 * @return [type]        [description]
+	 */
+	public function usersBrowseMerchandiseRecords($uid, $numid) {
+		//如果filed存在key中 则取出累加 否则就是直接创建新增
+		$usersBrowseMerchandiseRecords = R()->getHashSingle('usersBrowseMerchandiseRecords', $uid) ? : [];
+		//去重重复的数据
+		if(isset($usersBrowseMerchandiseRecords[$numid])) unset($usersBrowseMerchandiseRecords[$numid]);
+		array_unshift($usersBrowseMerchandiseRecords, $this->goodInfo());
+		//只保留最新的10个 如果超过10个则移除掉最后一个商品数据
+		if(count($usersBrowseMerchandiseRecords) >= 11) {
+		   array_pop($usersBrowseMerchandiseRecords);
+		}
+		foreach($usersBrowseMerchandiseRecords as $k => $v) {
+		    unset($usersBrowseMerchandiseRecords[$k]);
+		    $usersBrowseMerchandiseRecords[$v['num_iid']] = $v;
+		}
+		R()->hSet('usersBrowseMerchandiseRecords', $uid, json_encode($usersBrowseMerchandiseRecords, JSON_UNESCAPED_UNICODE));
+	}
 
 	/**
 	 * [shareRecord 记录用户分享行为]

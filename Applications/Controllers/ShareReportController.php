@@ -10,6 +10,8 @@ class ShareReportController extends Controller{
     public $edate;
 
     public $platform_type_con="";
+    public $media;  //前端必传
+    public $type;   //前端必传
 
     public function __construct(){
 
@@ -105,6 +107,26 @@ class ShareReportController extends Controller{
             info('暂无数据',-1);
         }
     }
+//    //留存报表:留存用户，新用户，设备用户
+//    public function  newinfo(){
+//       if(isset($_REQUEST["type"])&&!$_REQUEST($_GET["type"])&&isset($_REQUEST["media_id"])&&!$_REQUEST($_GET["media_id"])&&isset($_REQUEST["start_time"])&&!$_REQUEST($_GET["start_time"])){
+//           $this->type=$_REQUEST["type"];
+//           $this->media=$_REQUEST["media_id"];
+//           $this->sdate=$_REQUEST["start_time"];
+//           $this->edate=  date("Y-m-d",strtotime($this->sdate." +1 day"));
+//           $this->type=$_REQUEST["type"]=='week'?$this->edate=  date("Y-m-d",strtotime($this->sdate." +7 day")):$this->edate=  date("Y-m-d",strtotime($this->sdate." +30 day"));;
+//       }else{
+//           info("参数不全","-1",[]);
+//       }
+//        //留存用户
+//          $sql="select count(DISTINCT(uid)),report_date from ngw_click_log where report_date BETWEEN '".$this->sdate."' and '".$this->edate."' and uid in
+//                (SELECT a.objectId from ngw_uid a JOIN ngw_tracking b on a.objectId=b.uid and a.report_date ='".$this->sdate."' and b.source='".$this->media."') GROUP BY report_date ORDER BY report_date ASC";
+//          $res=M()->query($sql);
+//          D($res);
+//
+//
+//
+//    }
 
 
 }
