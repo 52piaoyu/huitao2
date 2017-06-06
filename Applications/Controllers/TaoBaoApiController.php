@@ -1,9 +1,11 @@
 <?php
-class TaoBaoApiController {
+class TaoBaoApiController
+{
     //商品混淆id
     public $goodsId = '';
     public $taoBao = '';
-    public function __construct($appKey, $secret) {
+    public function __construct($appKey, $secret)
+    {
         $this->taoBao = new TaoBaoController($appKey, $secret);
     }
   /**
@@ -12,11 +14,14 @@ class TaoBaoApiController {
    * @param  array  $open_iids [混淆id最大长度为300]
    * @return [type]            [description]
    */
-    public function taeItemsListRequest($num_iids = [], $open_iids = []) {
-        if(empty($num_iids) && empty($open_iids)) return;
+    public function taeItemsListRequest($num_iids = [], $open_iids = [])
+    {
+        if (empty($num_iids) && empty($open_iids)) {
+            return;
+        }
         $this->goodsId = $result = [ ];
         $data = $num_iids ? array_chunk($num_iids, 50) : $this->arrayLengthSegmentation($open_iids, 70);
-        foreach($data as $v) {
+        foreach ($data as $v) {
             $resp = $this->taoBao->send([
                 'fields'    => 'title,nick,pic_url,location,cid,price,post_fee,promoted_service,ju,shop_name',
                 'num_iids'  => $num_iids ? implode(',', $v) : '',
@@ -28,10 +33,11 @@ class TaoBaoApiController {
         return $result;
     }
     //按照数组的值长度进行分割
-    public function arrayLengthSegmentation($data, $length) {
+    public function arrayLengthSegmentation($data, $length)
+    {
         $str = '';
-        foreach($data as $k => $v) {
-            if($length > mb_strlen($v) + mb_strlen($str)) {
+        foreach ($data as $k => $v) {
+            if ($length > mb_strlen($v) + mb_strlen($str)) {
                 $str .= $v.',';
                 unset($data[$k]);
             }
@@ -41,7 +47,8 @@ class TaoBaoApiController {
         return $this->goodsId;
     }
     //获取订单状态 http://open.taobao.com/docs/api.htm?spm=a219a.7395905.0.0.pJy3zR&apiId=21986
-    public function tmcMessagesConsumeRequest() {
+    public function tmcMessagesConsumeRequest()
+    {
         $resp = $this->taoBao->send([
             'quantity' => 200,
             'method'   => 'taobao.tmc.messages.consume',
@@ -49,9 +56,10 @@ class TaoBaoApiController {
         return !empty($resp['tmc_messages_consume_response']) ? $resp['tmc_messages_consume_response'] : '';
     }
     //确认消息 http://open.taobao.com/docs/api.htm?spm=a219a.7395905.0.0.V2dlzx&apiId=21985
-    public function tmcMessagesConfirmRequest($id) {
+    public function tmcMessagesConfirmRequest($id)
+    {
         $id = array_chunk($id, 200);
-        foreach($id as $v) {
+        foreach ($id as $v) {
             $this->taoBao->send([
                 'method'        => 'taobao.tmc.messages.confirm ',
                 's_message_ids' => implode($v, ',')
@@ -59,7 +67,8 @@ class TaoBaoApiController {
         }
     }
     //淘宝客商品查询搜索 http://open.taobao.com/docs/api.htm?spm=a219a.7629065.0.0.1m81nR&apiId=24515
-    public function tbkItemGetRequest($paramster) {
+    public function tbkItemGetRequest($paramster)
+    {
         $data = [
             'q'             => addslashes(htmlspecialchars(isset($paramster['title']) ? $paramster['title'] : '.')),
             'fields'        => 'num_iid,title,pict_url,reserve_price,zk_final_price,user_type,provcity,item_url,seller_id,volume,nick',
@@ -81,7 +90,8 @@ class TaoBaoApiController {
 
 
 
-    public function ibkUatmFavorites(){
+    public function ibkUatmFavorites()
+    {
 
           //self::__setas('23550152',"d27bdb2a9dba59cc20d7099f371d03d3");
 
@@ -93,11 +103,13 @@ class TaoBaoApiController {
 
          ]);
 
-         if(isset($rsp["tbk_uatm_favorites_get_response"]))return $rsp["tbk_uatm_favorites_get_response"];
-
+        if (isset($rsp["tbk_uatm_favorites_get_response"])) {
+            return $rsp["tbk_uatm_favorites_get_response"];
+        }
     }
 
-    public function tbkUatmFavoritesItem($param=null){
+    public function tbkUatmFavoritesItem($param=null)
+    {
 
 
        // self::__setas('23550152',"d27bdb2a9dba59cc20d7099f371d03d3");
@@ -113,7 +125,9 @@ class TaoBaoApiController {
 
          ]);
 
-         if(isset($rsp["tbk_uatm_favorites_item_get_response"]))return $rsp["tbk_uatm_favorites_item_get_response"];
+        if (isset($rsp["tbk_uatm_favorites_item_get_response"])) {
+            return $rsp["tbk_uatm_favorites_item_get_response"];
+        }
     }
 
 
@@ -129,19 +143,20 @@ class TaoBaoApiController {
      * @param  integer $platform [链接形式：1：PC，2：无线，默认：2]
      * @return [type]            [description]
      */
-    public function tbkItemInfoGetRequest($openId, $platform = 2) {
+    public function tbkItemInfoGetRequest($openId, $platform = 2)
+    {
         $id = array_chunk($openId, 1);
         $resp = $res = [];
-        foreach($id as $v) {
+        foreach ($id as $v) {
             $resp[] = $this->taoBao->send([
                 'fields'    => 'num_iid,title,pict_url,small_images,reserve_price,zk_final_price,user_type,provcity,item_url,seller_id,volume',
                 'platform'  => $platform,
                 'num_iids'  => implode($v, ','),
                 'method'    => 'taobao.tbk.item.info.get',
                 'app_key'   => 23630111
-            ],'d2a2eded0c22d6f69f8aae033f42cdce');
+            ], 'd2a2eded0c22d6f69f8aae033f42cdce');
         }
-        foreach($resp as $v) {
+        foreach ($resp as $v) {
             $res = array_merge(!empty($v['tbk_item_info_get_response']['results']['n_tbk_item']) ? $v['tbk_item_info_get_response']['results']['n_tbk_item'] : [], $res);
         }
         return $res;

@@ -2,7 +2,7 @@
 include DIR_LIB.'taobaosdk/TopSdk.php';
 class AlitestController
 {
-//    public static $c  = null;
+    //    public static $c  = null;
 //    public function __construct() {
 //        self:: $c            = new TopClient("23630277","a13d3d6a8cf33d063f630f3d2b571727");
 //        self:: $c->format    = 'json';
@@ -16,9 +16,9 @@ class AlitestController
 //        $req->setNumIids($num_iid);
 //        var_dump($resp) ;
 //    }
-      public function getdata(){
+      public function getdata()
+      {
           $json_ret = file_get_contents("http://api.dataoke.com/index.php?r=Port/index&type=paoliang&appkey=ar6h3wb99l&v=2");
           D($json_ret);
       }
-
 }

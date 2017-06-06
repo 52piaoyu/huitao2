@@ -8,11 +8,12 @@ class ShopController extends AppController
         echo 'ok';
     }
     //热更新 ios 安卓
-    public function android() {
+    public function android()
+    {
         ob_clean();
         !empty($_GET['name']) or info('缺少文件名称');
         $filepath = '../android/'.$_GET['name'];
-        $fp=fopen($filepath,"r");
+        $fp=fopen($filepath, "r");
         $file_Size = filesize($filepath);
         header("Content-type:application/octet-stream");
         header("Accept-Ranges:bytes");

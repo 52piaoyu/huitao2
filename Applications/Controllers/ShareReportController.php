@@ -3,8 +3,8 @@
 header("Content-type: text/html; charset=utf-8");
 
 
-class ShareReportController extends Controller{
-
+class ShareReportController extends Controller
+{
     public $sdate;
 
     public $edate;
@@ -13,49 +13,49 @@ class ShareReportController extends Controller{
     public $media;  //前端必传
     public $type;   //前端必传
 
-    public function __construct(){
-
-        if(isset($_REQUEST["sdate"])&&!empty($_REQUEST["sdate"])){
-
+    public function __construct()
+    {
+        if (isset($_REQUEST["sdate"])&&!empty($_REQUEST["sdate"])) {
             $this->sdate = $_REQUEST["sdate"];
-
         }
 
-        if(isset($_REQUEST["edate"])&&!empty($_REQUEST["edate"])){
-
+        if (isset($_REQUEST["edate"])&&!empty($_REQUEST["edate"])) {
             $this->edate = $_REQUEST["edate"];
-
         }
 
-        if(!$this->edate)$this->edate = date("Y-m-d");
+        if (!$this->edate) {
+            $this->edate = date("Y-m-d");
+        }
 
-        if(!$this->sdate)$this->sdate = date("Y-m-d",strtotime($this->edate." -7 day"));
+        if (!$this->sdate) {
+            $this->sdate = date("Y-m-d", strtotime($this->edate." -7 day"));
+        }
 
-    if(isset($_REQUEST["platform_type"])&&($_REQUEST["platform_type"]!=='')&&in_array($_REQUEST["platform_type"],array(0,1))){
+        if (isset($_REQUEST["platform_type"])&&($_REQUEST["platform_type"]!=='')&&in_array($_REQUEST["platform_type"], array(0,1))) {
 
            // $this->platform_type = $_REQUEST["platform_type"];
 
             $this->platform_type_con = ' and type = '.$_REQUEST["platform_type"];
-
-        }else $this->platform_type_con = ' and type = 2';
-
-
+        } else {
+            $this->platform_type_con = ' and type = 2';
+        }
     }
 
-    public function draw(){
+    public function draw()
+    {
         $this->view('index');
     }
-    public function index(){
+    public function index()
+    {
         //!!*缺用户徒弟数
         $sql = "select uid,share_type,count(num_iid) shares from ngw_share_log where report_date BETWEEN '2017-01-16' and '2017-02-10' GROUP BY uid,share_type";
-
     }
 
-    public function total_report_chart(){
-
+    public function total_report_chart()
+    {
         $sql = "select report_date,new_user,order_num,order_sales,order_benifit,order_back,order_back_fee,active_user,share_num,share_rate,invited_user from ngw_total_daily_report where report_date between '".$this->sdate."' and '".$this->edate."'".$this->platform_type_con.' order by report_date asc';
         //echo $sql;exit;
-        $result = db_query($sql,"",array(),shoppingCon());
+        $result = db_query($sql, "", array(), shoppingCon());
 
         //print_r($result);
 
@@ -73,14 +73,13 @@ class ShareReportController extends Controller{
         $chart["legend"] = array_values($chart_ref);
 
         $data = array();
-        if($result){
+        if ($result) {
             foreach ($result as $key => $value) {
                 //x轴只传数据
                 $chart["xAxis"]["data"][] = $value["report_date"];
 
 
                 foreach ($value as $k => $v) {
-
                     $data[$k][] = $v;
                 }
 
@@ -88,23 +87,20 @@ class ShareReportController extends Controller{
 
                 //$chart["series"]["stack"] = ;
                 //y轴数据
-
             }
             // print_r($data);exit;
 
             $chart["series"] = array();
 
             foreach ($chart_ref as $attr=>$name) {
-
                 $chart["series"][] = array("name"=>$name,"type"=>"line","data"=>$data[$attr]);
-
             }
             // print_r($chart);
             //测试loading动画
              sleep(1);
-            info('ok',1,$chart);
-        }else{
-            info('暂无数据',-1);
+            info('ok', 1, $chart);
+        } else {
+            info('暂无数据', -1);
         }
     }
 //    //留存报表:留存用户，新用户，设备用户
@@ -127,8 +123,4 @@ class ShareReportController extends Controller{
 //
 //
 //    }
-
-
 }
-
-

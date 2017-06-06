@@ -1,29 +1,34 @@
 <?php
-class GoodsExcelController extends HtController  {
-   public function query() {
+class GoodsExcelController extends HtController
+{
+    public function query()
+    {
         $params = $_REQUEST;
         $goodsInfo = $this->goodsSold($params['type'], $_REQUEST);
-        if($params['type'] == 2)
+        if ($params['type'] == 2) {
             $this->chart($goodsInfo);
+        }
         $order = [];
         $backrate = [];
-        foreach($goodsInfo as $v) {
+        foreach ($goodsInfo as $v) {
             //获取付款成功的订单
-            if($v['order_status'] == 2 && !empty($v['num_iid']))
-                    $order[] = $v;
+            if ($v['order_status'] == 2 && !empty($v['num_iid'])) {
+                $order[] = $v;
+            }
             //获取退款的订单
-            else if($v['order_status'] == 5)
+            elseif ($v['order_status'] == 5) {
                 $backrate[] = $v;
+            }
         }
         $order or info('暂无售出商品');
         //处理有过退单的订单信息
-        foreach($order as $k => &$v) {
+        foreach ($order as $k => &$v) {
             $v['tpurchase']      = 0;
             $v['conversionrate'] = 0;
             //转换率 下单数/点击数
             $v['conversionrate'] = round($v['click'] ? $v['purchase']/$v['click']*100 : 0, 2);
-            foreach($backrate as $value) {
-                if(in_array($v['order_id'], $value)) {
+            foreach ($backrate as $value) {
+                if (in_array($v['order_id'], $value)) {
                     $v['tpurchase'] = $value['purchase'];
                     //商品销售额 = 减去退单的真实销售额
                     $v['fee'] = $v['fee']+(-$value['fee']);
@@ -49,11 +54,11 @@ class GoodsExcelController extends HtController  {
         //总转换率=总下单数/总点击
         $statistics['actRate']     = round($statistics['purchase'] ? $statistics['purchase']/$statistics['click']*100 : 0, 2).'%';
         //因为除数是0 会报错 所以这里做下判断
-        if($statistics['purchase']-$statistics['tpurchase']) {
+        if ($statistics['purchase']-$statistics['tpurchase']) {
             //平均成交价格 = 总销售额 / （总下单数 - 退单数
-            $statistics['avgPrice'] = round($statistics['fee']/($statistics['purchase']-$statistics['tpurchase']),2);
+            $statistics['avgPrice'] = round($statistics['fee']/($statistics['purchase']-$statistics['tpurchase']), 2);
             //平均成交利润 = 总利润 / （总下单数 - 退单数）
-            $statistics['avgprofit'] = round(array_sum(array_column($order, 'benifit'))/($statistics['purchase']-$statistics['tpurchase']),2);
+            $statistics['avgprofit'] = round(array_sum(array_column($order, 'benifit'))/($statistics['purchase']-$statistics['tpurchase']), 2);
         } else {
             $statistics['avgPrice']  = 0;
             $statistics['avgprofit'] = 0;
@@ -65,12 +70,13 @@ class GoodsExcelController extends HtController  {
             'list'       => array_splice($data, ($params['page_no']-1)*$params['page_size'], $params['page_size'])
         ];
         info('OK', 1, $data);
-   }
-   public function chart($order) {
+    }
+    public function chart($order)
+    {
         $data = [];
-        foreach($order as $v) {
-            if(!empty($v['gw_name'])) {
-                if($v['order_status'] == 5) {
+        foreach ($order as $v) {
+            if (!empty($v['gw_name'])) {
+                if ($v['order_status'] == 5) {
                     $data[$v['gw_name']]['tfee']      = $v['fee'];
                     $data[$v['gw_name']]['tpurchase'] = $v['purchase'];
                     $data[$v['gw_name']]['tbenifit']  = $v['benifit'];
@@ -91,9 +97,10 @@ class GoodsExcelController extends HtController  {
             'total_data' => $sum
         ];
         info('ok', 1, $data);
-   }
+    }
 
-   public function goodsSold($type = 1, $params = []) {
+    public function goodsSold($type = 1, $params = [])
+    {
         // 如果为2 则表示是查看图表形式
         $field = $type == 2 ? ' SUM(fee) fee , SUM(benifit) benifit , a.order_status , COUNT(a.num_iid) purchase , sum(b.click) click , gw_name ' : ' * ';
         return M()->query("SELECT {$field} FROM
@@ -107,7 +114,5 @@ class GoodsExcelController extends HtController  {
                 ) GROUP BY num_iid , order_status
         ) a LEFT JOIN( SELECT sum(click) click , num_iid FROM ngw_goods_daily_report GROUP BY num_iid) b ON b.num_iid = a.num_iid AND a.order_status = 2
             LEFT JOIN( SELECT num_iid , gw_name , title FROM ngw_goods_online GROUP BY num_iid) c ON c.num_iid = a.num_iid ".($type ==2 ? 'GROUP BY gw_name ,order_status' : ''), 'all');
-   }
-
+    }
 }
-

@@ -1,8 +1,9 @@
 <?php
-class HtImportlogController extends  Controller
+class HtImportlogController extends Controller
 {
     //查出今日新增多少
-    public function querylog(){
+    public function querylog()
+    {
         isset($_REQUEST['date'])&&$_REQUEST['date']!=null?$date=$_REQUEST['date']:$date=date('Y-m-d');
         $sql='select  (select count(DISTINCT num_iid) from gw_goods where created_date='."'$date'".' and top="1") as hot,
                (select count(*) from gw_goods_online where createdAt>'."'$date'".' and status="1")as online,
@@ -15,8 +16,7 @@ class HtImportlogController extends  Controller
     // 15 12 * * * /usr/bin/curl http://180.76.160.251/shopping/HtImportlog/querylog  >> /tmp/import.log;
          //商品导入表示，如果成功888，如果失败发119
          $data['online']>0?$staus='888' :$staus='119';
-         $code=new VcodeController();
-         $code->sendCode("18221924339",$staus);
+        $code=new VcodeController();
+        $code->sendCode("18221924339", $staus);
     }
-
 }

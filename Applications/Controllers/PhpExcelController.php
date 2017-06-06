@@ -1,13 +1,16 @@
 <?php
 include DIR_LIB . 'PHPExcel/Classes/PHPExcel.php';
 // phpexcel 工具类
-class PhpExcelController {
-    public  $phpExcel;
-    public function __construct() {
+class PhpExcelController
+{
+    public $phpExcel;
+    public function __construct()
+    {
         $this->phpExcel = new PHPExcel;
     }
     //设置header头
-    public function setHeader($fileName = '下载') {
+    public function setHeader($fileName = '下载')
+    {
         ob_end_clean();
         header('Content-Type: application/vnd.ms-excel');
         header('Content-Disposition: attachment;filename='.$fileName.'.xlsx');
@@ -18,5 +21,4 @@ class PhpExcelController {
         header('Cache-Control: cache, must-revalidate');
         header('Pragma: public');
     }
-
 }

@@ -4,7 +4,8 @@
  */
 class NewGoodsController extends AppController
 {
-    public function __construct(){
+    public function __construct()
+    {
 
        /*if(is_file(DIR_COMMON.'gwcore/NewGoods'.EXT)){
 
@@ -30,16 +31,15 @@ class NewGoodsController extends AppController
         }
     }*/
 
-    public function index1(){
-
+    public function index1()
+    {
         load_module("goods");
         $f = new ExcelGoods();
         $r = $f->getGoodsData(3);
-
     }
 
-    public function inputfav(){
-
+    public function inputfav()
+    {
         load_module("goods");
 
             /*$s = new Score();
@@ -53,23 +53,27 @@ class NewGoodsController extends AppController
         echo $r->msg;
     }
 
-    public function test(){
+    public function test()
+    {
         echo 23432;
     }
 
 
     public function index()
     {
-        
         $i=0;
-        do{
+        do {
             $url = "http://es3.laizhuan.com/shopping_new/NewGoods/inputfav";
-            $r = curl_req($url,null,null,400);
+            $r = curl_req($url, null, null, 400);
             //echo $r;exit;
-            if($r==1)echo 1;
-            else echo 0;
-           $i++;
-        }while($r!=1||$i<5);exit;
+            if ($r==1) {
+                echo 1;
+            } else {
+                echo 0;
+            }
+            $i++;
+        } while ($r!=1||$i<5);
+        exit;
         //$m = new Module("goods");
         load_module("goods");
 
@@ -150,5 +154,4 @@ class NewGoodsController extends AppController
         // $v = ['name' => 1];
         // D(get_curl('http://localhost:8080/HuiTao/test/a', $v)); //POST方式 不带$v GET方式
     }
-
 }

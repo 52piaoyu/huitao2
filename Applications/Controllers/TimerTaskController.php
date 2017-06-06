@@ -1,7 +1,7 @@
 <?php
-   
-    class TimerTaskController{
 
+    class TimerTaskController
+    {
         public $db;
 
         public $pdo;
@@ -10,8 +10,9 @@
 
         public $isDebug = 1;
 
-        public function __construct(){
-    /*
+        public function __construct()
+        {
+            /*
             if(substr(php_sapi_name(), 0, 3) == 'cli'){
 
                 $arr = getopt('d:');
@@ -30,42 +31,40 @@
             load_module("record");
 
             $m = load_module("goods");
-          
         }
 
-        function index(){
-
-
-          
+        public function index()
+        {
         }
         //每日点击&购买数据汇集 —— 昨日数据
-        public function dailyReport(){
-
+        public function dailyReport()
+        {
             $r = new Record();
 
             $r->dailyReportRecord();
         }
 
         //点击记录,分享记录，搜索记录。
-        public function actionRecord(){
-
+        public function actionRecord()
+        {
             $r = new Record();
 
             $r->userActionRecord();
         }
 
         //更新上一小时分数，所依赖的点击&购买（计算转化率）
-        public function updateScoreData(){
+        public function updateScoreData()
+        {
 
           //  $sql = "select sum(click),sum(pruchase) from "
             $s = new Score();
             
             $s->updateGoodsScoreInfo();
-
         }
 
         //更新上一小时分数
-        public function updateGoodsScore(){
+        public function updateGoodsScore()
+        {
             
             //load_module("goods");
             
@@ -74,8 +73,8 @@
             $s->addPurchaseRateScore();
         }
 
-        public function orderInfo($order_list){
-
+        public function orderInfo($order_list)
+        {
             $r = new Record();
 
             $res =  $r->updateOrderInfo($order_list);
@@ -83,11 +82,11 @@
             return $res;
         }
 
-        public function purchaseRecord($order_id_list,$order_status=2){
-           
+        public function purchaseRecord($order_id_list, $order_status=2)
+        {
             $r = new Record();
 
-            $res =  $r->purchaseRecord($order_id_list,$order_status);
+            $res =  $r->purchaseRecord($order_id_list, $order_status);
 
             //print_r($res);
 
@@ -95,9 +94,7 @@
             //echo $res;
            
             // echo $res;
-
         }
-       
     }
 
              
@@ -118,4 +115,3 @@
         //
         //
         $task->tokenVaild("hb575002176678b",1);*/
-?>

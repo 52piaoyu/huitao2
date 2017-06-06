@@ -1,44 +1,45 @@
 <?php
 date_default_timezone_set('Asia/Shanghai');
-class HtHotgoodController extends  Controller
+class HtHotgoodController extends Controller
 {
-    public  function import(){
+    public function import()
+    {
         $data=$this->dataokedata();
-        foreach ($data as $k=>$v){
+        foreach ($data as $k=>$v) {
             //如果存在这条记录，就把这条记录的top值改为1
-            if(M("goods")->where(['num_iid' => ['=',$v['num_iid']]])->select()){
+            if (M("goods")->where(['num_iid' => ['=',$v['num_iid']]])->select()) {
                 M("goods")->where(['num_iid' => ['=',$v['num_iid']]])->save(['top'=>'1']);
-            }else{
+            } else {
                 M("goods")->add($v);
                 //  M("goods_coupon")->add($v);  //该方法会过滤掉特殊字符&
 //                D($v);
-                try{
-                    $pdo=new PDO('mysql:host=localhost;dbname=laitin','root','123456');
+                try {
+                    $pdo=new PDO('mysql:host=localhost;dbname=laitin', 'root', '123456');
 //                     $pdo=new PDO('mysql:host=taskofr.rdsm9ln50om7rva.rds.bj.baidubce.com;dbname=huitao','huitao','huitao909886');
                     $sql='INSERT ngw_goods_coupon(num_iid,coupon_id,sum,num,reduce,end_time,url,coupon_url,created_date) values(?,?,?,?,?,?,?,?,?)';
                     $stmt=$pdo->prepare($sql);
-                    $stmt->bindParam(1,$v['num_iid']);
-                    $stmt->bindParam(2,$v['coupon_id']);
-                    $stmt->bindParam(3,$v['sum']);
-                    $stmt->bindParam(4,$v['num']);
-                    $stmt->bindParam(5,$v['reduce']);
-                    $stmt->bindParam(6,$v['end_time']);
-                    $stmt->bindParam(7,$v['url']);
-                    $stmt->bindParam(8,$v['coupon_url']);
-                    $stmt->bindParam(9,$v['created_date']);
-                    $stmt->execute();}
-                catch (PDOException  $e){
+                    $stmt->bindParam(1, $v['num_iid']);
+                    $stmt->bindParam(2, $v['coupon_id']);
+                    $stmt->bindParam(3, $v['sum']);
+                    $stmt->bindParam(4, $v['num']);
+                    $stmt->bindParam(5, $v['reduce']);
+                    $stmt->bindParam(6, $v['end_time']);
+                    $stmt->bindParam(7, $v['url']);
+                    $stmt->bindParam(8, $v['coupon_url']);
+                    $stmt->bindParam(9, $v['created_date']);
+                    $stmt->execute();
+                } catch (PDOException  $e) {
                     echo $e->getMessage();
                 }
             };
-
         }
     }
-    public function dataokedata(){
+    public function dataokedata()
+    {
         $mydata=[];
         $getdata=file_get_contents("http://api.dataoke.com/index.php?r=Port/index&type=top100&appkey=ar6h3wb99l&v=2");
-        $res_arr=json_decode($getdata,true)['result'];
-        for($i=0;$i<50;$i++){
+        $res_arr=json_decode($getdata, true)['result'];
+        for ($i=0;$i<50;$i++) {
             $mydata[$i]['num_iid']=$res_arr[$i]['GoodsID'];  /*商品id*/
             $mydata[$i]['title']=$res_arr[$i]['Title'];   /*标题*/
             $mydata[$i]['pict_url']=$res_arr[$i]['Pic'];   /*图片地址*/
@@ -68,5 +69,4 @@ class HtHotgoodController extends  Controller
     {
         return $str === "1" ? 0 : 1;
     }
-
 }

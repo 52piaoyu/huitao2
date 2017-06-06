@@ -1,7 +1,6 @@
 <?php
 class DailyReportController extends Controller
 {
-
     public $st;//日期
     public $ed;//结束时间
     public $description;//备注信息
@@ -11,30 +10,30 @@ class DailyReportController extends Controller
     public $newUser;
     public function __construct()
     {
-        if(isset($_GET["date"])&&!empty($_GET["date"])){
-
-           $this->st = $_GET["date"];
-
-        } else $this->st = date("Y-m-d",strtotime("-1 day"));
-        if(isset($_GET["desc"])&&!empty($_GET["desc"])){
-
+        if (isset($_GET["date"])&&!empty($_GET["date"])) {
+            $this->st = $_GET["date"];
+        } else {
+            $this->st = date("Y-m-d", strtotime("-1 day"));
+        }
+        if (isset($_GET["desc"])&&!empty($_GET["desc"])) {
             $this->description = $_GET["desc"];
-
-        } else $this->description ='';
+        } else {
+            $this->description ='';
+        }
 
         //测试
 //       $this->st='2017-05-04';
 
-        $this->ed=  date("Y-m-d",strtotime($this->st." +1 day"));
+        $this->ed=  date("Y-m-d", strtotime($this->st." +1 day"));
 //        echo '开始时间:'.$this->st."<br/>结束时间:".$this->ed;
-
     }
 
-    public function insertdata(){
-         echo date("Y-m-d H:i:s")."<br/>";
-         echo "<span>查询时间:</span><input type='text' name='date' style='display: inline-block' value=".$this->st."> <br/>";
-         echo "<span>添加备注:</span><span style='color: red'>".$this->description."</span><br/>";
-         echo "<hr/>";
+    public function insertdata()
+    {
+        echo date("Y-m-d H:i:s")."<br/>";
+        echo "<span>查询时间:</span><input type='text' name='date' style='display: inline-block' value=".$this->st."> <br/>";
+        echo "<span>添加备注:</span><span style='color: red'>".$this->description."</span><br/>";
+        echo "<hr/>";
 
         /**
          * 安卓+IOS
@@ -47,12 +46,12 @@ class DailyReportController extends Controller
 
         //新增淘宝用户
         $sql = "SELECT count(DISTINCT uid) num from ngw_taobao_log where createdAt BETWEEN '".$this->st."' and '".$this->ed."' and taobao_id is not null";
-        $taobao_new_user=self::checkvalue((M()->query($sql,'single'))['num']);
+        $taobao_new_user=self::checkvalue((M()->query($sql, 'single'))['num']);
         echo "新增绑定淘宝用户:<span style='color:red'>".$taobao_new_user."</span><br/>";
 
         //下单额 下单数 2->下单  5->退单-----》改成shopping_log 有type字段
         $sql="SELECT sum(benifit) benifit,sum(fee) fee,count(0) num from ngw_shopping_log where order_status=2 and createdAt BETWEEN '".$this->st."' and '".$this->ed."'";
-        $res=M()->query($sql,'single');
+        $res=M()->query($sql, 'single');
         $order_fee=self::checkvalue($res['fee']);
         $order_num=self::checkvalue($res['num']);
         $benifit=self::checkvalue($res['benifit']);
@@ -60,7 +59,7 @@ class DailyReportController extends Controller
         //退单数 退单额  改成shopping_log 有type字段
         $sql="SELECT sum(benifit) benifit,sum(fee) fee,count(0) num from ngw_shopping_log where order_status=2 and order_id in (select order_id from ngw_shopping_log where order_status=5 and createdAt BETWEEN '".$this->st."' and '".$this->ed."') ORDER BY order_id desc";
 //        echo $sql;
-        $res=M()->query($sql,'single');
+        $res=M()->query($sql, 'single');
         $order_back_fee=self::checkvalue($res['fee']);
         $order_back_num=self::checkvalue($res['num']);
         $f_benifit=self::checkvalue($res['benifit']);
@@ -88,7 +87,7 @@ class DailyReportController extends Controller
         $share_num_1 =self::checkvalue((M()->query($sql))['num']);
 
         //分享率
-        $share_rate=number_format($share_num_1 / ($user_num+0.0001) * 100,2);  //防止为0的时候报错
+        $share_rate=number_format($share_num_1 / ($user_num+0.0001) * 100, 2);  //防止为0的时候报错
 
         //邀请新增
         $sql = "SELECT count(0) num from ngw_uid where createdAt BETWEEN '".$this->st."' and '".$this->ed."' and sfuid is not null";
@@ -101,18 +100,18 @@ class DailyReportController extends Controller
 
         //当日有多少人完成了多少任务
         $sql="SELECT task_id,COUNT(DISTINCT uid) num from ngw_task_log where createdAt BETWEEN '".$this->st."' and '".$this->ed."'  group by task_id order by task_id ASC";
-        $res=M()->query($sql,'all');
+        $res=M()->query($sql, 'all');
         $ress=[];
-        for($i=0;$i<8;$i++){
+        for ($i=0;$i<8;$i++) {
             $ress[$i]['task_id']=$i+1;
             $ress[$i]['num']=0;
         }
-        foreach ($res as $k =>$v){
+        foreach ($res as $k =>$v) {
             $ress[$v['task_id']-1]['num']=$v['num'];
         }
 //        D($ress);
-        foreach ($ress as $k =>$v){
-             $this->task_str.=$v['task_id']."-".$v['num'].";"; //入库
+        foreach ($ress as $k =>$v) {
+            $this->task_str.=$v['task_id']."-".$v['num'].";"; //入库
              echo "完成任务".$v['task_id'].":有<span style='color:red'>".$v['num']."</span>人;";
         }
 //        D($this->task_str);
@@ -125,13 +124,15 @@ class DailyReportController extends Controller
 
 
         //根据传的参数决定是否更新表
-        if((isset($_GET["isRecord"])&&$_GET["isRecord"])){
+        if ((isset($_GET["isRecord"])&&$_GET["isRecord"])) {
             $sql="delete from ngw_total_daily_report where report_date = '".$this->st."' and type = 2";
             M()->exec($sql);
             $sql="insert into ngw_total_daily_report(report_date,new_user,order_num,order_sales,order_benifit,order_back,order_back_fee,active_user,share_num,share_rate,invited_user,type,new_taobao_user,description,task_str)values('".$this->st."',$uid_num,$order_num,$order_fee,$order_benifit,$order_back_num,$order_back_fee,
                 $active_user,$share_num,$share_rate,$invited_user,2,$taobao_new_user,'".$this->description."','".$this->task_str."')";
             $res=M()->exec($sql);
-            if($res)echo "update data success(Combine)!<br/>";
+            if ($res) {
+                echo "update data success(Combine)!<br/>";
+            }
         }
 
         /**
@@ -146,19 +147,19 @@ class DailyReportController extends Controller
 
         //新增淘宝用户
         $sql = "SELECT count(DISTINCT uid) num from ngw_taobao_log where uid in(select objectId from ngw_uid where type=0) and createdAt BETWEEN '".$this->st."' and '".$this->ed."'";
-        $taobao_new_user=self::checkvalue((M()->query($sql,'single'))['num']);
+        $taobao_new_user=self::checkvalue((M()->query($sql, 'single'))['num']);
         echo "新增绑定淘宝用户:<span style='color:red'>".$taobao_new_user."</span><br/>";
 
         //下单额 下单数 2->下单  5->退单
         $sql="SELECT sum(benifit) benifit,sum(fee) fee,count(0) num from ngw_shopping_log where order_status=2 and type=2 and createdAt BETWEEN '".$this->st."' and '".$this->ed."'";
-        $res=M()->query($sql,'single');
+        $res=M()->query($sql, 'single');
         $order_fee=self::checkvalue($res['fee']); //下单额
         $order_num=self::checkvalue($res['num']);  //下单数
         $benifit=self::checkvalue($res['benifit']);  //下单利润
 
         //退单数 退单额
         $sql="select sum(benifit) benifit,sum(fee) fee,count(0) num from ngw_shopping_log where order_status=2 and order_id in (select order_id from ngw_shopping_log where type=2 and order_status=5 and createdAt BETWEEN '".$this->st."' and '".$this->ed."') ORDER BY order_id desc";
-        $res=M()->query($sql,'single');
+        $res=M()->query($sql, 'single');
         $order_back_fee=self::checkvalue($res['fee']);
         $order_back_num=self::checkvalue($res['num']);
         $f_benifit=self::checkvalue($res['benifit']);
@@ -178,15 +179,17 @@ class DailyReportController extends Controller
         echo "活跃用户数:<span style='color:red'>".$active_click_num."</span><br/>";
 
         //分享总次数-未去重
-        $sql = "select count(0) num from ngw_share_log where report_date = '".$this->st."'".$type_con;;
+        $sql = "select count(0) num from ngw_share_log where report_date = '".$this->st."'".$type_con;
+        ;
         $share_num=self::checkvalue((M()->query($sql))['num']);
 
         //分享次数-去重
-        $sql = "select count(distinct(uid)) num from ngw_share_log where report_date = '".$this->st."'".$type_con;;
+        $sql = "select count(distinct(uid)) num from ngw_share_log where report_date = '".$this->st."'".$type_con;
+        ;
         $share_num_1 =self::checkvalue((M()->query($sql))['num']);
 
         //分享率
-        $share_rate=number_format($share_num_1 / ($user_num+0.0001) * 100,2);  //防止为0的时候报错
+        $share_rate=number_format($share_num_1 / ($user_num+0.0001) * 100, 2);  //防止为0的时候报错
 
         //邀请新增
         $sql = "SELECT count(0) num from ngw_uid where createdAt BETWEEN '".$this->st."' and '".$this->ed."' and sfuid is not null".$type_con;
@@ -198,31 +201,33 @@ class DailyReportController extends Controller
 
         //当日有多少人完成了多少任务
         $sql="SELECT task_id,COUNT(DISTINCT uid) num from ngw_task_log where uid in(select objectId from ngw_uid where type=0) and createdAt BETWEEN '".$this->st."' and '".$this->ed."'  group by task_id order by task_id ASC";
-        $res=M()->query($sql,'all');
+        $res=M()->query($sql, 'all');
         $ress=[];
-        for($i=0;$i<8;$i++){
+        for ($i=0;$i<8;$i++) {
             $ress[$i]['task_id']=$i+1;
             $ress[$i]['num']=0;
         }
-        foreach ($res as $k =>$v){
+        foreach ($res as $k =>$v) {
             $ress[$v['task_id']-1]['num']=$v['num'];
         }
         $this->task_str='';
 //        D($ress);
-        foreach ($ress as $k =>$v){
+        foreach ($ress as $k =>$v) {
             $this->task_str.=$v['task_id']."-".$v['num'].";"; //入库
             echo "完成任务".$v['task_id'].":有<span style='color:red'>".$v['num']."</span>人;";
         }
 //        D($this->task_str);
 
         //根据传的参数决定是否更新表
-        if((isset($_GET["isRecord"])&&$_GET["isRecord"])){
+        if ((isset($_GET["isRecord"])&&$_GET["isRecord"])) {
             $sql="delete from ngw_total_daily_report where report_date = '".$this->st."' and type = 0";
             M()->exec($sql);
             $sql="insert into ngw_total_daily_report(report_date,new_user,order_num,order_sales,order_benifit,order_back,order_back_fee,active_user,share_num,share_rate,invited_user,type,new_taobao_user,description,task_str)values('".$this->st."',$uid_num,$order_num,$order_fee,$order_benifit,$order_back_num,$order_back_fee,
                 $active_user,$share_num,$share_rate,$invited_user,0,$taobao_new_user,'".$this->description."','".$this->task_str."')";
             $res=M()->exec($sql);
-            if($res)echo "update data success(IOS)!<br/>";
+            if ($res) {
+                echo "update data success(IOS)!<br/>";
+            }
         }
 
 
@@ -242,19 +247,20 @@ class DailyReportController extends Controller
         echo "新增用户:<span style='color:red'>".$uid_num."</span><br/>";
 
         //新增淘宝用户
-        $sql = "SELECT count(DISTINCT uid) num from ngw_taobao_log where uid in(select objectId from ngw_uid where type=1) and createdAt BETWEEN '".$this->st."' and '".$this->ed."'";        $taobao_new_user=self::checkvalue((M()->query($sql,'single'))['num']);
+        $sql = "SELECT count(DISTINCT uid) num from ngw_taobao_log where uid in(select objectId from ngw_uid where type=1) and createdAt BETWEEN '".$this->st."' and '".$this->ed."'";
+        $taobao_new_user=self::checkvalue((M()->query($sql, 'single'))['num']);
         echo "新增绑定淘宝用户:<span style='color:red'>".$taobao_new_user."</span><br/>";
 
         //下单额 下单数 2->下单  5->退单
         $sql="SELECT sum(benifit) benifit,sum(fee) fee,count(0) num from ngw_shopping_log where order_status=2 and type=1 and createdAt BETWEEN '".$this->st."' and '".$this->ed."'";
-        $res=M()->query($sql,'single');
+        $res=M()->query($sql, 'single');
         $order_fee=self::checkvalue($res['fee']); //下单额
         $order_num=self::checkvalue($res['num']);  //下单数
         $benifit=self::checkvalue($res['benifit']);  //下单利润
 
         //退单数 退单额
         $sql="select sum(benifit) benifit,sum(fee) fee,count(0) num from ngw_shopping_log where order_status=2 and order_id in (select order_id from ngw_shopping_log where type=1 and order_status=5 and createdAt BETWEEN '".$this->st."' and '".$this->ed."') ORDER BY order_id desc";
-        $res=M()->query($sql,'single');
+        $res=M()->query($sql, 'single');
         $order_back_fee=self::checkvalue($res['fee']);
         $order_back_num=self::checkvalue($res['num']);
         $f_benifit=self::checkvalue($res['benifit']);
@@ -274,15 +280,17 @@ class DailyReportController extends Controller
         echo "活跃用户数:<span style='color:red'>".$active_click_num."</span><br/>";
 
         //分享总次数-未去重
-        $sql = "select count(0) num from ngw_share_log where report_date = '".$this->st."'".$type_con;;
+        $sql = "select count(0) num from ngw_share_log where report_date = '".$this->st."'".$type_con;
+        ;
         $share_num=self::checkvalue((M()->query($sql))['num']);
 
         //分享次数-去重
-        $sql = "select count(distinct(uid)) num from ngw_share_log where report_date = '".$this->st."'".$type_con;;
+        $sql = "select count(distinct(uid)) num from ngw_share_log where report_date = '".$this->st."'".$type_con;
+        ;
         $share_num_1 =self::checkvalue((M()->query($sql))['num']);
 
         //分享率
-        $share_rate=number_format($share_num_1 / ($user_num+0.0001) * 100,2);  //防止为0的时候报错
+        $share_rate=number_format($share_num_1 / ($user_num+0.0001) * 100, 2);  //防止为0的时候报错
 
         //邀请新增
         $sql = "SELECT count(0) num from ngw_uid where createdAt BETWEEN '".$this->st."' and '".$this->ed."' and sfuid is not null".$type_con;
@@ -294,37 +302,37 @@ class DailyReportController extends Controller
 
         //当日有多少人完成了多少任务
         $sql="SELECT task_id,COUNT(DISTINCT uid) num from ngw_task_log where uid in(select objectId from ngw_uid where type=1) and createdAt BETWEEN '".$this->st."' and '".$this->ed."'  group by task_id order by task_id ASC";
-        $res=M()->query($sql,'all');
+        $res=M()->query($sql, 'all');
         $ress=[];
-        for($i=0;$i<8;$i++){
+        for ($i=0;$i<8;$i++) {
             $ress[$i]['task_id']=$i+1;
             $ress[$i]['num']=0;
         }
-        foreach ($res as $k =>$v){
+        foreach ($res as $k =>$v) {
             $ress[$v['task_id']-1]['num']=$v['num'];
         }
 //        D($ress);
         $this->task_str='';
-        foreach ($ress as $k =>$v){
+        foreach ($ress as $k =>$v) {
             $this->task_str.=$v['task_id']."-".$v['num'].";"; //入库
             echo "完成任务".$v['task_id'].":有<span style='color:red'>".$v['num']."</span>人;";
         }
 //        D($this->task_str);
 
         //根据传的参数决定是否更新表
-        if((isset($_GET["isRecord"])&&$_GET["isRecord"])){
+        if ((isset($_GET["isRecord"])&&$_GET["isRecord"])) {
             $sql="delete from ngw_total_daily_report where report_date = '".$this->st."' and type = 1";
             M()->exec($sql);
             $sql="insert into ngw_total_daily_report(report_date,new_user,order_num,order_sales,order_benifit,order_back,order_back_fee,active_user,share_num,share_rate,invited_user,type,new_taobao_user,description,task_str)values('".$this->st."',$uid_num,$order_num,$order_fee,$order_benifit,$order_back_num,$order_back_fee,
                 $active_user,$share_num,$share_rate,$invited_user,1,$taobao_new_user,'".$this->description."','".$this->task_str."')";
             $res=M()->exec($sql);
-            if($res)echo "update data success(Android)!<br/>";
+            if ($res) {
+                echo "update data success(Android)!<br/>";
+            }
         }
-
-
     }
-    public static  function checkvalue($value){
+    public static function checkvalue($value)
+    {
         return $value=$value?$value:0;
     }
-
 }

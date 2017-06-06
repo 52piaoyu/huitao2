@@ -4,7 +4,8 @@ header("Content-type: text/html; charset=utf-8");
 /*
 商品类
  */
-class GoodsController extends Controller{
+class GoodsController extends Controller
+{
 
     //过滤条件：
     //单个类目的条数:0-没限制
@@ -43,7 +44,8 @@ class GoodsController extends Controller{
 
     public $isDebug = 0;
 
-    public function __construct(){
+    public function __construct()
+    {
 
        // $this->pdo = ini_pdo("gw","localhost:3306","root","root");
 
@@ -56,10 +58,10 @@ class GoodsController extends Controller{
         $this->date = isset($_GET["date"])&&!empty($_GET["date"])?$_GET["date"]:date("Y-m-d");
 
         $this->filterConfig = new FilterConfigController;
-
     }
 
-    public function index(){
+    public function index()
+    {
         //记录仓库表,今天的数据
         //$this->createWareTable();
         //筛选规则，筛选,inputGoodsTable内部使用
@@ -68,40 +70,41 @@ class GoodsController extends Controller{
         //!!*
         //一次导入，去掉了中间的仓库表 直接导入1000条数据 按折扣率排序
         return $this->inputGoodsTable();
-
     }
     //热销商品
-    public function hot_sell_goods(){
+    public function hot_sell_goods()
+    {
         $sql = "select num_iid,rating,price,top from ngw_goods where created_date = '2017-01-11'";
-        $rt = db_query($sql,$this->db,array(),$this->pdo);
+        $rt = db_query($sql, $this->db, array(), $this->pdo);
         //print_r($rt);
     }
 
       //更新排序表
-    public function refresh_sort($num_iid_list){
-        $this->filterConfig->refresh_sort($num_iid_list,2);
+    public function refresh_sort($num_iid_list)
+    {
+        $this->filterConfig->refresh_sort($num_iid_list, 2);
     }
     //记录仓库表
     //新增当日所有数据
-    public function createWareTable(){
+    public function createWareTable()
+    {
+        $date =  $this->date;
 
-            $date =  $this->date;
+        $sql = "select count(0) from ngw_goods where created_date = '".$date."'";
 
-            $sql = "select count(0) from ngw_goods where created_date = '".$date."'";
+        $count = db_query_singal($sql, $this->db, array(), $this->pdo);
 
-            $count = db_query_singal($sql,$this->db,array(),$this->pdo);
+        if ($count==0) {
+            echo date("Y-m-d")."no data"."\r\n";
+            exit;
+        }
 
-            if($count==0){
-                echo date("Y-m-d")."no data"."\r\n";
-                exit;
-            }
+        $sql_list = array();
 
-            $sql_list = array();
-
-            $sql_list[] = "DELETE FROM ngw_goods_ware WHERE created_date = '".$date."'";
+        $sql_list[] = "DELETE FROM ngw_goods_ware WHERE created_date = '".$date."'";
 
 
-            $insert_sql = "insert into ngw_goods_ware(
+        $insert_sql = "insert into ngw_goods_ware(
 
                         num_iid,coupon_id,created_date,title,pict_url,item_url,category,promotion_url,price,volume,rating,
 
@@ -110,7 +113,7 @@ class GoodsController extends Controller{
                     limited,reduce,start_time,end_time,url,coupon_url,discount,deal_price)";
 
 
-            $sql =  "SELECT a.num_iid,a.coupon_id,a.created_date,title,pict_url,item_url,category,promotion_url,price,volume,rating,
+        $sql =  "SELECT a.num_iid,a.coupon_id,a.created_date,title,pict_url,item_url,category,promotion_url,price,volume,rating,
 
                 seller_id,seller_name,store_name,store_type,top,taobao_cid,ngw_id,sum,num,val,
 
@@ -135,9 +138,9 @@ class GoodsController extends Controller{
 
                // echo $sql;
 
-            if($rt)echo date("Y-m-d H:i:s").":transcation ware $count data success.\r\n";
-
-            else {
+            if ($rt) {
+                echo date("Y-m-d H:i:s").":transcation ware $count data success.\r\n";
+            } else {
                 echo date("Y-m-d H:i:s").":transcation ware fail.\r\n";
                 exit;
             }
@@ -148,7 +151,8 @@ class GoodsController extends Controller{
     //3.折扣比（价格-优惠）/ 价格
     //4.去重了相同的商品
     //优惠券必须达到
-    public function filterRuleFirst(){
+    public function filterRuleFirst()
+    {
 
         /*$sql = "select num_iid,coupon_id,title,pict_url,item_url,category,promotion_url,price,volume,rating,seller_id,seller_name,
                 store_name,store_type,top,created_date,taobao_cid,ngw_id,sum,num,val,limited,reduce,discount,deal_price,
@@ -209,17 +213,17 @@ class GoodsController extends Controller{
         $sql = $sql . $condition . $group . $sort . $limit;
 
         return $sql;
-
     }
 
     //上架商品表
-    public function inputGoodsTable(){
+    public function inputGoodsTable()
+    {
 
            //$date =  $this->date;
 
             $delete_sql = "DELETE FROM ngw_goods_online WHERE created_date = '".$this->date."'";
 
-            $filter_sql = $this->filterRuleFirst();
+        $filter_sql = $this->filterRuleFirst();
             //echo $filter_sql;exit;
            // if(!$filter_sql)
             $insert_sql = "insert into ngw_goods_online(
@@ -228,10 +232,10 @@ class GoodsController extends Controller{
                 start_time,end_time,url,coupon_url)".$filter_sql;
            //echo $insert_sql;exit;
 
-            $rt =  db_transaction($this->pdo,array($delete_sql,$insert_sql));
+            $rt =  db_transaction($this->pdo, array($delete_sql,$insert_sql));
 
-            if($rt){
-                /*
+        if ($rt) {
+            /*
                  //!!去掉已经存在的相同的商品,这些商品不再次作为新品展示
                 $sql = "select num_iid from ngw_goods_online WHERE created_date = '".$this->date."' order by discount";
                // echo $sql;
@@ -245,14 +249,14 @@ class GoodsController extends Controller{
 
                 $sql = "select distinct(num_iid) from ngw_goods_online WHERE created_date = '".$this->date."'";
 
-                $all_num_iid = db_query_col($sql,$this->db,array(),$this->pdo);
+            $all_num_iid = db_query_col($sql, $this->db, array(), $this->pdo);
                  //!!*去掉已经存在的相同的商品,这些商品不再次作为新品展示
                  //!取出了已经在货架的商品，
                 $sql = "select num_iid from ngw_goods_online where status = 1 GROUP BY num_iid having count(0) > 1";
                 //$sql = "select num_iid from ngw_goods_online where num_iid in (" . implode(",",$all_num_iid) . ") GROUP BY num_iid having count(0) > 1";
                 //$sql = "select distinct(num_iid) from ngw_goods_online where GROUP BY num_iid having count(0) > 1";
                // echo $sql;
-                $repeat_num_iid = db_query_col($sql,$this->db,array(),$this->pdo);
+                $repeat_num_iid = db_query_col($sql, $this->db, array(), $this->pdo);
 
                 //print_r($sql_list);exit;
                 //echo $sql;exit;
@@ -260,126 +264,113 @@ class GoodsController extends Controller{
 
                 $sql_list[] = "delete from ngw_goods_sort where type = 2";
 
-                $insert_sql = "insert into ngw_goods_sort(num_iid,sort,type)values";
+            $insert_sql = "insert into ngw_goods_sort(num_iid,sort,type)values";
 
-                $insert_val = "";
+            $insert_val = "";
 
-                foreach ($all_num_iid as $key => $value) {
-
-                    if($key >= $this->insert_limit)break;
+            foreach ($all_num_iid as $key => $value) {
+                if ($key >= $this->insert_limit) {
+                    break;
+                }
                     //旧商品跳过
-                    if(in_array($value,$repeat_num_iid)){
+                    if (in_array($value, $repeat_num_iid)) {
                         continue;
                     }
 
-                    $insert_val .= "(".$value.",".($key+1001).",2),";
+                $insert_val .= "(".$value.",".($key+1001).",2),";
+            }
+            $temp_sql = $insert_sql . trim($insert_val, ",");
 
-                }
-                $temp_sql = $insert_sql . trim($insert_val,",");
-
-                $sql_list[] = $temp_sql;
+            $sql_list[] = $temp_sql;
                // print_r($sql_list);exit;
                 $rt = db_transaction($this->pdo, $sql_list);
 
-                if($rt)//return true;//echo date("Y-m-d H:i:s").":transcation goods success.\r\n";
-                    $r = ssreturn(1,date("Y-m-d H:i:s").":transcation goods success.",1,1);
-                else //return false;//echo date("Y-m-d H:i:s").":transcation goods fail.\r\n";
-                    $r = ssreturn(0,date("Y-m-d H:i:s").":transcation goods fail.",1,1);
-
-
+            if ($rt) {//return true;//echo date("Y-m-d H:i:s").":transcation goods success.\r\n";
+                    $r = ssreturn(1, date("Y-m-d H:i:s").":transcation goods success.", 1, 1);
+            } else { //return false;//echo date("Y-m-d H:i:s").":transcation goods fail.\r\n";
+                    $r = ssreturn(0, date("Y-m-d H:i:s").":transcation goods fail.", 1, 1);
             }
-            else {
-
-                if($rt===0)//echo date("Y-m-d H:i:s").":transcation goods success.\r\n";
-                    $r = ssreturn(1,date("Y-m-d H:i:s").":transcation goods success.",1,1);
-
-                else //echo date("Y-m-d H:i:s").":transcation goods fail.\r\n";
-                    $r = ssreturn(0,date("Y-m-d H:i:s").":transcation goods fail.",1,1);
+        } else {
+            if ($rt===0) {//echo date("Y-m-d H:i:s").":transcation goods success.\r\n";
+                    $r = ssreturn(1, date("Y-m-d H:i:s").":transcation goods success.", 1, 1);
+            } else { //echo date("Y-m-d H:i:s").":transcation goods fail.\r\n";
+                    $r = ssreturn(0, date("Y-m-d H:i:s").":transcation goods fail.", 1, 1);
             }
+        }
 
-           return $r;
-
+        return $r;
     }
 
 
 
 
-    protected function _unitFilter($filter_arr,$attr,$alies=''){
-
+    protected function _unitFilter($filter_arr, $attr, $alies='')
+    {
         $str = "";
 
         $attr = $alies ? $alies . ".$attr" : $attr;
 
-        if(is_array($filter_arr)&&count($filter_arr)){
-
+        if (is_array($filter_arr)&&count($filter_arr)) {
             $str = $attr . " >= " . $filter_arr[0];
 
-            if(count($filter_arr)>1){
-
+            if (count($filter_arr)>1) {
                 $str .= " and ". $attr . " <= " . $filter_arr[1];
             }
         }
 
-        if($str)return " and (". $str . ")";
+        if ($str) {
+            return " and (". $str . ")";
+        }
 
         return $str;
-
     }
     //佣金比
-    protected function ratingFilter($alies=""){
-
-        return $this->_unitFilter($this->rating_limit,"rating",$alies);
-
+    protected function ratingFilter($alies="")
+    {
+        return $this->_unitFilter($this->rating_limit, "rating", $alies);
     }
 
     //成交价
-    protected function dealPriceFilter($alies=""){
-
-        return $this->_unitFilter($this->deal_price_limit,"deal_price",$alies);
-
+    protected function dealPriceFilter($alies="")
+    {
+        return $this->_unitFilter($this->deal_price_limit, "deal_price", $alies);
     }
 
     //折扣
-    protected function discountLimitFilter($alies=""){
-
-        return $this->_unitFilter($this->discount_limit,"discount",$alies);
-
+    protected function discountLimitFilter($alies="")
+    {
+        return $this->_unitFilter($this->discount_limit, "discount", $alies);
     }
     //优惠券数量
-    protected function couponNumLimitFilter($alies=""){
-
-        return $this->_unitFilter($this->coupon_num_limit,"num",$alies);
-
+    protected function couponNumLimitFilter($alies="")
+    {
+        return $this->_unitFilter($this->coupon_num_limit, "num", $alies);
     }
     //优惠券日期有效期
-    protected function couponDateLimitFilter($date,$alies=""){
-
+    protected function couponDateLimitFilter($date, $alies="")
+    {
         return " and (start_time <= '".$date."' and end_time >= '".$date."')";
-
     }
 
     //!!*因为有限制会过滤掉一部分数据，所以or top > 0
     //!开始时间可能是没有的，所以没加，但是有少数 还未开始的活动
-    protected function topSoldFilter($date,$alies=""){
-
-       return " or (top > 0 and (rating * deal_price >= ".$this->rating_price_limit." ) and end_time >= '".$date."') ";
+    protected function topSoldFilter($date, $alies="")
+    {
+        return " or (top > 0 and (rating * deal_price >= ".$this->rating_price_limit." ) and end_time >= '".$date."') ";
     }
 
 
     //下架规则
-    public function downGoods(){
+    public function downGoods()
+    {
         /*
         1.优惠券剩余量消耗完毕
         2.优惠券有效期过期
         */
-
     }
 
     //过滤规则
-    public function filterGoods(){
-
+    public function filterGoods()
+    {
     }
-
 }
-
-

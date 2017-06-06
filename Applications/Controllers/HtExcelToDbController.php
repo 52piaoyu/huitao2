@@ -8,17 +8,18 @@ class HtExcelToDbController extends Controller
     public static $flag_goods=false;
     public static $flag_coupon=false;
     public $data;
-    public function export(){
-        if(isset($_GET['date'])){
+    public function export()
+    {
+        if (isset($_GET['date'])) {
             $mydate=$_GET['date'];
-        }else{
+        } else {
             $mydate=date("Ymd");
         }
         $data=self::format_excel2array($mydate);
         $flag_goods=$this->addByExcel($data);
-        if($flag_goods){
+        if ($flag_goods) {
             $flag_coupon=$this->addcoupon($data);
-            if($flag_coupon){
+            if ($flag_coupon) {
                 //开始导入热卖,大淘客
 //                $dataoke=new HtHotgoodController();
 //                $dataoke->import();
@@ -33,16 +34,16 @@ class HtExcelToDbController extends Controller
 //                else{
 //                    echo ("商品表列出失败").date("Y-m-d H:i:s");
 //                }
-            }else{
-                info("导入优惠券失败",'-1');
+            } else {
+                info("导入优惠券失败", '-1');
             }
-        }else{
-            info("导入商品表失败",'-1');
+        } else {
+            info("导入商品表失败", '-1');
         }
     }
     public function addByExcel($data)
     {
-        echo( "导入商品表开始...".date("Y-m-d H:i:s")."<br/>");
+        echo("导入商品表开始...".date("Y-m-d H:i:s")."<br/>");
 //        echo $filePath;
         for ($i = 0; $i < count($data); $i++) {
             //卸载商品主表不需要的字段，因为插入时需要完全匹配，所以必须卸载
@@ -58,7 +59,6 @@ class HtExcelToDbController extends Controller
         }
         //D($data);
         return  $res = A('HtExcelToDb:addGoodsbyexcle', [$data]);
-
     }
 
     //添加优惠券到数据库
@@ -83,14 +83,13 @@ class HtExcelToDbController extends Controller
         }
 //        D($data);
         return   $res = A('HtExcelToDb:addcouponbyexcle', [$data]);
-
     }
 
     //将excle表格的内容转换成二维索引数组
-    function format_excel2array($date='' ,$sheet = 0)
+    public function format_excel2array($date='', $sheet = 0)
     {
         $filePath=DIR.'/resource/goods_excel/goods' . $date.'.xls';
-        $date=date("Y-m-d",strtotime($date));
+        $date=date("Y-m-d", strtotime($date));
         require_once DIR_LIB . 'PHPExcel/Classes/PHPExcel.php';
         if (empty($filePath) or !file_exists($filePath)) {
             die('file not exists');
@@ -142,11 +141,10 @@ class HtExcelToDbController extends Controller
             $data[$rowIndex]['store_type'] = self::getStoreType($data[$rowIndex]['store_type']);
             $data[$rowIndex]['limited'] = self::getlimitStr($data[$rowIndex]['val']);
             $data[$rowIndex]['reduce'] = self::getreduceStr($data[$rowIndex]['val']);
-            $data[$rowIndex]['coupon_url'] =self::getCouponUrl($data[$rowIndex]['seller_id'],$data[$rowIndex]['coupon_id']);
+            $data[$rowIndex]['coupon_url'] =self::getCouponUrl($data[$rowIndex]['seller_id'], $data[$rowIndex]['coupon_id']);
             //卸载两张表都不需要的字段
             unset($data[$rowIndex]['backmoney_w']);
             unset($data[$rowIndex]['coupon_url_pro']);
-
         }
 //          D($data);
         return array_values($data);
@@ -174,9 +172,9 @@ class HtExcelToDbController extends Controller
         return $str === "天猫" ? 1 : 0;
     }
     //获取优惠券的更新的url
-    public function getCouponUrl($seller_id,$coupon_id){
+    public function getCouponUrl($seller_id, $coupon_id)
+    {
         return 'https://h5.m.taobao.com/ump/coupon/detail/index.html?sellerId='.
         $seller_id.'&'.'activityId='.$coupon_id.'&global_seller=false&currency=CNY';
-
     }
 }

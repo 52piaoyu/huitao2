@@ -1,108 +1,111 @@
 <?php
 
-   class InterfaceController extends Controller{
-
-    function curl_req1($url, $post_data=null,$info=null){
-        //初始化一个 cURL 对象
+   class InterfaceController extends Controller
+   {
+       public function curl_req1($url, $post_data=null, $info=null)
+       {
+           //初始化一个 cURL 对象
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_TIMEOUT,4);
-        if($post_data){
-            // 设置请求为post类型
+           curl_setopt($ch, CURLOPT_URL, $url);
+           curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+           curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+           if ($post_data) {
+               // 设置请求为post类型
             curl_setopt($ch, CURLOPT_POST, 1);
             // 添加post数据到请求中
             curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
-        }
-        if(strpos($url,"https")>=0){
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // 跳过证书检查
+           }
+           if (strpos($url, "https")>=0) {
+               curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // 跳过证书检查
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); // 从证书中检查SSL加密算法是否存在
-
-        }
-        $rsp = array();
+           }
+           $rsp = array();
         // 执行post请求，获得回复
         $content = curl_exec($ch);
 
-        $infos = curl_getinfo($ch);
+           $infos = curl_getinfo($ch);
 
-        if($info){
-            if(!is_array($info))$info = array($info);
-            foreach ($info as $k => $v) {
+           if ($info) {
+               if (!is_array($info)) {
+                   $info = array($info);
+               }
+               foreach ($info as $k => $v) {
+                   $response[$v] = $infos[$v];
+               }
+               $response["content"] = $content;
+           } else {
+               $response = $content;
+           }
 
-                    $response[$v] = $infos[$v];
+           curl_close($ch);
 
-            }
-            $response["content"] = $content;
-
-
-        }else $response = $content;
-
-        curl_close($ch);
-
-        return $response;
-    }
+           return $response;
+       }
 
     //每日的商品排列，导入后触发
-    function index(){
-       
+    public function index()
+    {
         $goods = new GoodsController;
         $rt = $goods->index();
        //print_r($rt);exit;
         //$r = json_decode($rt);
        //
-        if($rt->status==1){
+        if ($rt->status==1) {
             $filter = new FilterConfigController;
             $r = $filter->sort();
-            if($r->status==1)  {
+            if ($r->status==1) {
                 //清空内存依赖
                 A('Goods:delAllGoods');
-            } 
+            }
             return $r;
-                  
-        }else{
+        } else {
             return $rt;
-            
         }
     }
 
     //虚拟点击事件
-    function testClick(){
+    public function testClick()
+    {
         $record = new RecordController;
         $record->clickRecord();
     }
     //定时存click到数据库
-    function loopClick(){
+    public function loopClick()
+    {
         $record = new RecordController;
         $record->loopDailyUidGoodsReport();
     }
 
-    function loopRecord(){
-        $record = new RecordController;
-        $record->dailyReportRecord();
-    }
+       public function loopRecord()
+       {
+           $record = new RecordController;
+           $record->dailyReportRecord();
+       }
     //昨天最后数据的残余处理
-    function restRecord(){
-        $date = date("Y-m-d",strtotime("-1 day"));
+    public function restRecord()
+    {
+        $date = date("Y-m-d", strtotime("-1 day"));
         //$date = "2017-01-11";
         $record = new RecordController;
         $record->inputDailyUidGoodsReport($date);
         $record->dailyReportRecord($date);
     }
     //手动导入
-    function inputClick(){
+    public function inputClick()
+    {
         $date = "2017-01-08";
         $record = new RecordController;
         $record->inputDailyUidGoodsReport($date);
-  
     }
-    function inputRecord(){
-        $date = "2017-01-08";
-        $record = new RecordController;
+       public function inputRecord()
+       {
+           $date = "2017-01-08";
+           $record = new RecordController;
 
-        $record->dailyReportRecord($date);
-    }     //
-    function testTBApi(){
-
+           $record->dailyReportRecord($date);
+       }     //
+    public function testTBApi()
+    {
         $json = '{
             "tmc_message": [
                 {
@@ -114,7 +117,7 @@
                 }
             ]
         }';
-        $_POST['message'] = json_decode($json,true);
+        $_POST['message'] = json_decode($json, true);
 
         //print_r($_POST);
 
@@ -125,27 +128,26 @@
         $tbk->run();
        // print_r($post_data);
        // $this->curl_req1($url, $post_data);
-
     }
 
-    function test(){
-
-    $host = "http://es1.laizhuan.com";
+       public function test()
+       {
+           $host = "http://es1.laizhuan.com";
     
     //echo 234;
     $param_arr = getopt('url:');
     //var_dump($param_arr);
     $url = $param_arr["url"]?getopt('url:'):$_GET["url"];
 
-    switch ($url) {
+           switch ($url) {
         //测点击
         case 'clickrecord':
-            $param = $host."/shopping/record/clickRecord?did=1&abc=sdf&uid=sdlfjsef".rand(0,9)."&fee=34&order_id=2407625183347946&order_status=6001&num_iid=54236341230".rand(0,9);
+            $param = $host."/shopping/record/clickRecord?did=1&abc=sdf&uid=sdlfjsef".rand(0, 9)."&fee=34&order_id=2407625183347946&order_status=6001&num_iid=54236341230".rand(0, 9);
             $url = $param."?url=".$url;
             //echo $url;exit;
             //curl_req($url);
-            $params["num_iid"] = "54236341230".rand(0,9);
-            $params["uid"] = "sdlfjsef".rand(0,9);
+            $params["num_iid"] = "54236341230".rand(0, 9);
+            $params["uid"] = "sdlfjsef".rand(0, 9);
             $_REQUEST = $params;
             //print_r($_REQUEST);//exit;
             $this->testClick();
@@ -169,8 +171,5 @@
          curl_req($url);
     }
 */
-    }
-
-}
-
-?>
+       }
+   }

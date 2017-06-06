@@ -1,5 +1,6 @@
 <?php
-class TaoBaoKeController extends AppController {
+class TaoBaoKeController extends AppController
+{
     //存储商品列表服务api查询到的数据
     private $taobaoList = [];
     //淘宝api实例类
@@ -17,36 +18,42 @@ class TaoBaoKeController extends AppController {
         'taobao_tae_BaichuanTradeRefundSuccess' => ['退款成功', 5],
         'taobao_tae_BaichuanTradeClosed'        => ['交易关闭', 6]
     ];
-    public function run() {
+    public function run()
+    {
         $this->taoBaoKeModel = new TaoBaoKeModel;
         self::$baiChuanConfig = (include DIR_CORE.'baiChuanConfig.php')['order'];
-        foreach(self::$baiChuanConfig as $v) {
+        foreach (self::$baiChuanConfig as $v) {
             $this->taoBaoApi = new TaoBaoApiController($v['appkey'], $v['secret']);
             $this->message();
         }
         echo '处理完成<br/>';
     }
     // 订单信息
-    public function message() {
+    public function message()
+    {
         //获取所有订单信息
         $resp = $this->taoBaoApi->tmcMessagesConsumeRequest();
         // file_put_contents('order.txt', json_encode($resp, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), FILE_APPEND);
         // $resp = (json_decode(file_get_contents('order.json'), true));
-        if(empty($resp['messages']['tmc_message'])) return;
-            $order = $resp['messages']['tmc_message'];
+        if (empty($resp['messages']['tmc_message'])) {
+            return;
+        }
+        $order = $resp['messages']['tmc_message'];
         //存储付款成功以及退款成功的单号
         $paymentSuccess = $refundSuccess = $auctionId = [];
-        foreach($order as $v) {
+        foreach ($order as $v) {
             $content = json_decode($v['content'], true);
             //映射对应的订单状态
             list($content['msg'], $content['status']) = isset(self::$option[$v['topic']]) ? self::$option[$v['topic']] : [$v['topic'], 0];
             //获取全部付款成功的商品混淆id 以及退款成功 付款成功的订单号
-            if(2 == $content['status']) {
-               foreach($content['auction_infos'] as $v) {
+            if (2 == $content['status']) {
+                foreach ($content['auction_infos'] as $v) {
                     $auctionId[]        = $v['auction_id'];
                     $paymentSuccess[]   = $v['detail_order_id'];
-               }
-            } else if(5 == $content['status']) $refundSuccess[] = $content['tid'];
+                }
+            } elseif (5 == $content['status']) {
+                $refundSuccess[] = $content['tid'];
+            }
             $data[] = $content;
         }
         //批量进行请求api拿到明文id 以及邮费
@@ -54,38 +61,43 @@ class TaoBaoKeController extends AppController {
         //订单批量入库
         $this->addOrder($data);
         //批量确认消息
-        $this->taoBaoApi->tmcMessagesConfirmRequest(array_column($order,'id'));
+        $this->taoBaoApi->tmcMessagesConfirmRequest(array_column($order, 'id'));
        //付款成功
        $timerTask  = new TimerTaskController;
-        if(!empty($paymentSuccess)) {
+        if (!empty($paymentSuccess)) {
             $timerTask->orderInfo($paymentSuccess);
             $timerTask->purchaseRecord($paymentSuccess, 2);
             (SuccShopIncomeController::getObj())->incomeHandle(array_diff($paymentSuccess, $refundSuccess));
         }
         //退款成功
-        if(!empty($refundSuccess)) {
+        if (!empty($refundSuccess)) {
             $timerTask->purchaseRecord($refundSuccess, 5);
             (FailShopIncomeController::getObj())->incomeHandle(array_diff($refundSuccess, $paymentSuccess));
         }
     }
     //通过传入商品明文id 查询相关api数据入库
-    public function complementGoodsOnline($numIid = [], $price = '') {
+    public function complementGoodsOnline($numIid = [], $price = '')
+    {
         //支持前端 post批量入库
         $numIid  = $numIid ? : explode(',', $_POST['num_iid']);
         //如果库里存在则就不在需要查询api入库了
         $pendingTreatment = array_diff($numIid, array_column(M('goods_online')->where('num_iid in('.(connectionArray($numIid)).')')->field('num_iid')->select('all'), 'num_iid'));
-        if(!$pendingTreatment) return;
-        if(!$this->taoBaoApi) {
-            foreach(self::$baiChuanConfig as $v) {
+        if (!$pendingTreatment) {
+            return;
+        }
+        if (!$this->taoBaoApi) {
+            foreach (self::$baiChuanConfig as $v) {
                 $this->taoBaoApi  = new TaoBaoApiController($v['appkey'], $v['secret']);
                 $this->taobaoList = $this->taoBaoApi->taeItemsListRequest($pendingTreatment);
-                if($this->taobaoList) break;
+                if ($this->taobaoList) {
+                    break;
+                }
             }
         }
         $res = [];
-        foreach($this->taoBaoApi->tbkItemInfoGetRequest($pendingTreatment) as $v) {
-            foreach($this->taobaoList as $val) {
-                if($v['num_iid'] == $val['open_id']) {
+        foreach ($this->taoBaoApi->tbkItemInfoGetRequest($pendingTreatment) as $v) {
+            foreach ($this->taobaoList as $val) {
+                if ($v['num_iid'] == $val['open_id']) {
                     $v['deal_price'] = $price;
                     $res[] = $this->replaceField(array_merge($val, $v), [
                         'pic_url'       => 'pict_url',      //主图链接
@@ -100,21 +112,22 @@ class TaoBaoKeController extends AppController {
         }
         echo $this->taoBaoKeModel->addOnlineGoods($res);
     }
-    private function addOrder($data) {
-        if(!empty($data)) {
+    private function addOrder($data)
+    {
+        if (!empty($data)) {
             $sql = 'INSERT IGNORE INTO ngw_order_status('.('`'.implode('`,`', array_keys($this->taoBaoKeModel->setFileds())).'`').') VALUES ';
-            foreach($data as $v) {
+            foreach ($data as $v) {
                 $v = $this->replaceField($v, [
                     'tid'        => 'order_id',
                     'refund_fee' => 'paid_fee'
                 ]);
-                !empty($v['auction_infos'])     OR $v['auction_infos'][] = $v;
-                foreach($v['auction_infos'] as $_v) {
+                !empty($v['auction_infos'])     or $v['auction_infos'][] = $v;
+                foreach ($v['auction_infos'] as $_v) {
                     //把auction_infos字段里的值和外面的值组合在一起进行处理入库
                     $v = array_merge($v, $_v);
                     //匹配从商品列表服务api查出来的混淆id 获取到该商品明文id
-                    foreach(is_array($this->taobaoList) ? $this->taobaoList : [ ] as $taobaoList) {
-                        if($taobaoList['open_iid'] == $v['auction_id'] and 2 == $v['status']) {
+                    foreach (is_array($this->taobaoList) ? $this->taobaoList : [ ] as $taobaoList) {
+                        if ($taobaoList['open_iid'] == $v['auction_id'] and 2 == $v['status']) {
                             //减过邮费之后的价钱
                             $v['paid_fee'] = abs($v['paid_fee']) - abs($taobaoList['post_fee']) < 0 ? 0 : abs($v['paid_fee']) - abs($taobaoList['post_fee']);
                             //获取明文id
@@ -126,7 +139,7 @@ class TaoBaoKeController extends AppController {
                         }
                     }
                     //生成退单时间
-                    !empty($v['create_order_time']) OR $v['create_order_time'] = date('Y-m-d H:i:s');
+                    !empty($v['create_order_time']) or $v['create_order_time'] = date('Y-m-d H:i:s');
                     //生成入库日期
                     $v['created_date'] = date('Y-m-d');
                     $sql .= '('.implode($this->taoBaoKeModel->setFileds($v), ',').'),';
@@ -137,29 +150,33 @@ class TaoBaoKeController extends AppController {
         }
     }
     //字段替换
-    public function replaceField($data, $key) {
-         foreach($data as $k => $v) {
-            if(array_key_exists($k, $key)) {
+    public function replaceField($data, $key)
+    {
+        foreach ($data as $k => $v) {
+            if (array_key_exists($k, $key)) {
                 $data[$key[$k]] = $v;
                 unset($data[$k]);
             }
-         }
+        }
         return $data;
     }
     //用户付款成功时存储订单号以及用户信息
-    public function addOrderId() {
-        if(empty($this->dparam['uid']) || empty($this->dparam['order_id']))
+    public function addOrderId()
+    {
+        if (empty($this->dparam['uid']) || empty($this->dparam['order_id'])) {
             info('缺少参数', -1);
-        if(is_array($this->dparam['order_id'])) {
-            foreach($this->dparam['order_id'] as $k => $v) {
+        }
+        if (is_array($this->dparam['order_id'])) {
+            foreach ($this->dparam['order_id'] as $k => $v) {
                 $this->dparam['order_id']     = (string)$v;
                 $this->dparam['created_date'] = date('Y-m-d');
-                if(!M('order')->where(['order_id' => ['=', $v]])->select('single'))
+                if (!M('order')->where(['order_id' => ['=', $v]])->select('single')) {
                     $add = M('order')->add($this->dparam);
+                }
             }
-            !empty($add) ? info('添加成功',1) : info('添加失败',-1);
+            !empty($add) ? info('添加成功', 1) : info('添加失败', -1);
         } else {
-            info('类型格式不对',-1);
+            info('类型格式不对', -1);
         }
     }
 }

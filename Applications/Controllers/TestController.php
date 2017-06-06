@@ -1,51 +1,49 @@
 <?php
-class TestController extends AppController {
-    public function test() {
-        $numid = '999';
-        $uid = 'xiaomi';
-        //如果filed存在key中 则取出累加 否则就是直接创建新增
-        $usersBrowseMerchandiseRecords = R()->getHashSingle('usersBrowseMerchandiseRecords', $uid);
-        if(!is_array($usersBrowseMerchandiseRecords)) $usersBrowseMerchandiseRecords = [];
-        //去重重复的数据
-        if(isset($usersBrowseMerchandiseRecords[$numid])) unset($usersBrowseMerchandiseRecords[$numid]);
-        array_unshift($usersBrowseMerchandiseRecords, $this->n());
-        //只保留最新的10个 如果超过10个则移除掉最后一个商品数据
-        if(count($usersBrowseMerchandiseRecords) >= 11) {
-           array_pop($usersBrowseMerchandiseRecords);
-        }
-        foreach($usersBrowseMerchandiseRecords as $k => $v) {
-            $usersBrowseMerchandiseRecords[$v['num_iid']] = $v;
-            if(!isset($usersBrowseMerchandiseRecords[$v['num_iid']]['expirationDate'])) {
-                //设置过期时间
-                $usersBrowseMerchandiseRecords[$v['num_iid']]['expirationDate'] = 3600 * 24 * 7;
-                //设置入库时间
-                $usersBrowseMerchandiseRecords[$v['num_iid']]['date'] = time();
-            }
-            if(time() > $usersBrowseMerchandiseRecords[$v['num_iid']]['date'] + $usersBrowseMerchandiseRecords[$v['num_iid']]['expirationDate']) {
-
-            }
-            unset($usersBrowseMerchandiseRecords[$k]);
-        }
-        R()->hSet('usersBrowseMerchandiseRecords', $uid, json_encode($usersBrowseMerchandiseRecords, JSON_UNESCAPED_UNICODE));
-        D(R()->getHashSingle('usersBrowseMerchandiseRecords', $uid));
+/**
+ * Implements hook_menu().
+ *
+ * Description
+ *
+ * @return array An array of menu items
+ */
+class TestController extends AppController
+{
+    public function tes() {
+        $sql="SELECT a.*,FORMAT((b.rating/100*b.price*".parent::PERCENT."),2) as rating,b.title,b.seller_name nick,b.url,b.store_type,b.pict_url,b.price,b.category_id cid,b.category,b.deal_price zk_final_price,b.item_url,b.reduce,b.volume,concat('".parent::SHARE_URL."',b.num_iid) share_url FROM ngw_goods_info a JOIN ngw_goods_online b ON a.num_iid = b.num_iid AND a.favorite_id = b.favorite_id WHERE a.is_board = 0 AND a.is_show = 1 AND a.is_sold = 1 AND a.status=1 AND b.status= 1 GROUP BY a.num_iid ORDER BY a.is_front DESC,score DESC {$this->limit}";
+        $page_no = ($this->dparam['page_no'] - 1) * $this->dparam['page_size'] ;
+        $page_size = $page_no + $this->dparam['page_size'] - 1;
+        //查询redis 是否有商品 如果有则return 如果没有则查库然后 清空当前redis数据 再存一遍
+        $goods = R()->getListPage('soldLists',$page_no,$page_size);
+        $total = count($goods);
+        if($total >= $page_size) info(['status'=>1,'msg'=>'操作成功!','data'=>$goods,'total'=>$total]);
+        $goods = M()->query($sql,'all');
+        if(!$this->silent && empty($goods)) info('暂无该分类商品',-1);
+        D($goods);exit;
+        R()->delFeild('soldLists');
+        $this->redisToGoods('soldLists',$goods);
+        info(['status'=>1,'msg'=>'操作成功!','data'=>$this->page($goods),'total'=>count($goods)]);
     }
-    public function n() {
-        return [
-            "id" => "128730",
-            "score" => "50.00",
-            "top" => "0",
-            "created_date" => "2017-04-25",
-            "createdAt" => "2017-04-25 13:49:28",
-            "updatedAt" => "2017-05-16 18:14:30",
-            "category_id" => "114",
-            "favorite_id" => "4344772",
-            "num_iid" => "53087751458",
-            "rating" => "0.97",
-            "title" => "夏装新款简约字母人物印花短袖T恤女学生韩版百搭圆领打底衫上衣",
-            "nick" => null,
-            "url" => null,
-            "store_type" => "0",
-            "pict_url" => "http://img3.tbcdn.cn/tfscom/i4/TB1Q5BhJFXXXXXJXXXXXXXXXXXX_!!0-item_pic.jpg"
-        ];
+    public function demo() {
+
+        if($a == 2) {
+            foreach($b as $v) {
+
+                echo 2
+}
+}
+}
+public function __construct()
+{
+    echo 1
+    }
+    public function a()
+    {
+        echo 2;
+    }
+    public function d() {
+
+    }
+    public function a() {
+        echo 1;
     }
 }
